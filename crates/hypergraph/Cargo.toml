@@ -1,0 +1,13 @@
+[package]
+name = "hypergraph"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+manifold = { path = "../manifold" }
+traits = { path = "../traits" }
+core = { path = "../core" }
+
+[features]
+default = []
+type_alias_impl_trait = []

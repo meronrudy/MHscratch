@@ -1,0 +1,12 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/core",
+    "crates/hypergraph",
+    "crates/manifold",
+    "crates/bridge",
+    "crates/exec",
+    "crates/analysis",
+    "crates/verify",
+    "tests", "crates/traits",
+]

@@ -1,0 +1,28 @@
+[package]
+name = "analysis"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+ndarray = "0.15"
+ndarray-linalg = "0.16"
+autograd = { version = "0.1", optional = true }
+hypergraph = { path = "../hypergraph" }
+nalgebra = "0.32.3"
+nalgebra-sparse = "0.11.0"
+traits = { path = "../traits" }
+rayon = "1.5"
+
+[dev-dependencies]
+approx = "0.5"
+ndarray-linalg = "0.16"
+
+[features]
+default = []
+autodiff = ["autograd"]
+type_alias_impl_trait = []
+
+[[test]]
+name = "diff_test"
+path = "tests/diff_test.rs"
+required-features = ["autodiff"]

@@ -1,0 +1,28 @@
+use core::ids::{EdgeIx, NodeIx};
+use std::cmp::Ordering;
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct Event {
+    pub time: u64,
+    pub priority: u32,
+    pub node: NodeIx,
+    pub edge: Option<EdgeIx>,
+}
+
+impl Ord for Event {
+    fn cmp(&self, other: &Self) -> Ordering {
+        (self.time, self.priority, self.node, self.edge).cmp(&(
+            other.time,
+            other.priority,
+            other.node,
+            other.edge,
+        ))
+    }
+}
+
+impl PartialOrd for Event {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
