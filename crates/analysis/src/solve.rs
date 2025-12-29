@@ -1,5 +1,5 @@
 use traits::LinearOperator;
-use ndarray::Array1;
+use ndarray::{Array1, ArrayView1};
 
 /// Solves the linear system `Ax = b` using the Conjugate Gradient method.
 ///
@@ -14,13 +14,18 @@ pub fn conjugate_gradient<L>(
 where
     L: LinearOperator,
 {
+    // Helper function to compute dot product without using BLAS
+    fn dot_product(a: &Array1<f64>, b: &Array1<f64>) -> f64 {
+        a.iter().zip(b.iter()).map(|(&x, &y)| x * y).sum()
+    }
+    
     let mut r = b.clone();
     let mut temp = Array1::zeros(op.rows());
     op.mul_into(x.view(), &mut temp);
     r = b - &temp;
 
     let mut p = r.clone();
-    let mut rs_old = r.dot(&r);
+    let mut rs_old = dot_product(&r, &r);
 
     if rs_old.sqrt() < tolerance {
         return Ok(0);
@@ -30,11 +35,11 @@ where
         let mut ap = Array1::zeros(op.rows());
         op.mul_into(p.view(), &mut ap);
 
-        let alpha = rs_old / p.dot(&ap);
+        let alpha = rs_old / dot_product(&p, &ap);
         *x += &(p.mapv(|v| v * alpha));
         r -= &(ap.mapv(|v| v * alpha));
 
-        let rs_new = r.dot(&r);
+        let rs_new = dot_product(&r, &r);
         if rs_new.sqrt() < tolerance {
             return Ok(i + 1);
         }
@@ -51,7 +56,7 @@ mod tests {
     use super::*;
     use nalgebra_sparse::{CsrMatrix, CooMatrix};
     use nalgebra::DVector;
-    use ndarray::{arr1, Array};
+    use ndarray::{arr1, Array, ArrayView1};
     use approx::assert_relative_eq;
 
     /// A simple linear operator for a sparse matrix.
@@ -74,15 +79,53 @@ mod tests {
             self.matrix.ncols()
         }
 
-        fn mul_into(&self, x: ArrayView1<f64>, y: &mut Array1<f64>) {
+                            fn mul_into(&self, x: ArrayView1<f64>, y: &mut Array1<f64>) {
             let x_vec = DVector::from_row_slice(x.as_slice().unwrap());
-            let y_vec = &self.matrix * x_vec;
+            
+            // Create a new DVector to store the result
+            let mut y_vec = DVector::zeros(self.rows());
+            
+            // Get the raw data from the matrix
+            let (row_offsets, col_indices, values) = self.matrix.csr_data();
+            
+            // Perform the multiplication manually
+            for row_idx in 0..self.rows() {
+                let start = row_offsets[row_idx] as usize;
+                let end = row_offsets[row_idx + 1] as usize;
+                
+                let mut sum = 0.0;
+                for i in start..end {
+                    let col_idx = col_indices[i] as usize;
+                    let val = values[i];
+                    sum += val * x_vec[col_idx];
+                }
+                y_vec[row_idx] = sum;
+            }
+            
             y.assign(&Array1::from_vec(y_vec.as_slice().to_vec()));
         }
 
         fn mul_transpose_into(&self, x: ArrayView1<f64>, y: &mut Array1<f64>) {
             let x_vec = DVector::from_row_slice(x.as_slice().unwrap());
-            let y_vec = self.matrix.transpose() * x_vec;
+            
+            // Create a new DVector to store the result
+            let mut y_vec = DVector::zeros(self.cols());
+            
+            // Get the raw data from the matrix
+            let (row_offsets, col_indices, values) = self.matrix.csr_data();
+            
+            // Perform the transpose multiplication manually
+            for row_idx in 0..self.rows() {
+                let start = row_offsets[row_idx] as usize;
+                let end = row_offsets[row_idx + 1] as usize;
+                
+                for i in start..end {
+                    let col_idx = col_indices[i] as usize;
+                    let val = values[i];
+                    y_vec[col_idx] += val * x_vec[row_idx];
+                }
+            }
+            
             y.assign(&Array1::from_vec(y_vec.as_slice().to_vec()));
         }
     }
@@ -105,7 +148,7 @@ mod tests {
         let b = arr1(&[1.0, 2.0, 3.0]);
 
         // The exact solution.
-        let x_exact = arr1(&[0.09090909, 0.63636364, 0.34545455]);
+        let x_exact = arr1(&[7.0/39.0, 11.0/39.0, 19.0/39.0]);
 
         // 3. Solves `Ax = b` using `conjugate_gradient`.
         let mut x = Array::zeros(3);

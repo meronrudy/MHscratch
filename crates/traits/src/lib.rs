@@ -1,4 +1,5 @@
-pub mod footprint;
-pub mod linear_operator;
+use hypergraph::prelude::*;
 
-pub use linear_operator::LinearOperator;
+pub trait Operator<V: Vertex> {
+    fn eval(&self, vertices: &[V]) -> V;
+}

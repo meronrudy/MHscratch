@@ -4,5 +4,4 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-core = { path = "../core" }
-ndarray = "0.15"
+hypergraph = { path = "../hypergraph" }

@@ -1,0 +1,103 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Sparse matrix arithmetic operations."><title>nalgebra_sparse::ops - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-aa0817cf.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="nalgebra_sparse" data-themes="" data-resource-suffix="" data-rustdoc-version="1.90.0 (1159e78c4 2025-09-14)" data-channel="1.90.0" data-search-js="search-fa3e91e5.js" data-settings-js="settings-5514c975.js" ><script src="../../static.files/storage-68b7e25d.js"></script><script defer src="../sidebar-items.js"></script><script defer src="../../static.files/main-eebb9057.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-32bb7600.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-044be391.svg"></head><body class="rustdoc mod"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../../nalgebra_sparse/index.html">nalgebra_<wbr>sparse</a><span class="version">0.11.0</span></h2></div><div class="sidebar-elems"><section id="rustdoc-toc"><h2 class="location"><a href="#">Module ops</a></h2><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#available-stdops-implementations" title="Available `std::ops` implementations">Available <code>std::ops</code> implementations</a><ul><li><a href="#binary-operators" title="Binary operators">Binary operators</a></li><li><a href="#unary-operators" title="Unary operators">Unary operators</a></li></ul></li><li><a href="#example-usage" title="Example usage">Example usage</a></li></ul><h3><a href="#modules">Module Items</a></h3><ul class="block"><li><a href="#modules" title="Modules">Modules</a></li><li><a href="#enums" title="Enums">Enums</a></li></ul></section><div id="rustdoc-modnav"><h2 class="in-crate"><a href="../index.html">In crate nalgebra_<wbr>sparse</a></h2></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><div class="rustdoc-breadcrumbs"><a href="../index.html">nalgebra_sparse</a></div><h1>Module <span>ops</span><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../../src/nalgebra_sparse/ops/mod.rs.html#1-196">Source</a> </span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Sparse matrix arithmetic operations.</p>
+<p>This module contains a number of routines for sparse matrix arithmetic. These routines are
+primarily intended for “expert usage”. Most users should prefer to use standard
+<code>std::ops</code> operations for simple and readable code when possible. The routines provided here
+offer more control over allocation, and allow fusing some low-level operations for higher
+performance.</p>
+<p>The available operations are organized by backend. Currently, only the <a href="serial/index.html" title="mod nalgebra_sparse::ops::serial"><code>serial</code></a> backend
+is available. In the future, backends that expose parallel operations may become available.
+All <code>std::ops</code> implementations will remain single-threaded and powered by the
+<code>serial</code> backend.</p>
+<p>Many routines are able to implicitly transpose matrices involved in the operation.
+For example, the routine <a href="serial/fn.spadd_csr_prealloc.html" title="fn nalgebra_sparse::ops::serial::spadd_csr_prealloc"><code>spadd_csr_prealloc</code></a> performs the
+operation <code>C &lt;- beta * C + alpha * op(A)</code>. Here <code>op(A)</code> indicates that the matrix <code>A</code> can
+either be used as-is or transposed. The notation <code>op(A)</code> is represented in code by the
+<a href="enum.Op.html" title="enum nalgebra_sparse::ops::Op"><code>Op</code></a> enum.</p>
+<h2 id="available-stdops-implementations"><a class="doc-anchor" href="#available-stdops-implementations">§</a>Available <code>std::ops</code> implementations</h2><h3 id="binary-operators"><a class="doc-anchor" href="#binary-operators">§</a>Binary operators</h3>
+<p>The below table summarizes the currently supported binary operators between matrices.
+In general, binary operators between sparse matrices are only supported if both matrices
+are stored in the same format. All supported binary operators are implemented for
+all four combinations of values and references.</p>
+<table>
+    <tr>
+        <th>LHS (down) \ RHS (right)</th>
+        <th>COO</th>
+        <th>CSR</th>
+        <th>CSC</th>
+        <th>Dense</th>
+    </tr>
+    <tr>
+        <th>COO</th>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+    </tr>
+    <tr>
+        <th>CSR</th>
+        <td></td>
+        <td>+ - *</td>
+        <td></td>
+        <td>*</td>
+    </tr>
+    <tr>
+        <th>CSC</th>
+        <td></td>
+        <td></td>
+        <td>+ - *</td>
+        <td>*</td>
+    </tr>
+    <tr>
+        <th>Dense</th>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td>+ - *</td>
+    </tr>
+</table>
+<p>As can be seen from the table, only <code>CSR * Dense</code> and <code>CSC * Dense</code> are supported.
+The other way around, i.e. <code>Dense * CSR</code> and <code>Dense * CSC</code> are not implemented.</p>
+<p>Additionally, <a href="../csr/struct.CsrMatrix.html" title="struct nalgebra_sparse::csr::CsrMatrix">CsrMatrix</a> and <a href="../csc/struct.CscMatrix.html" title="struct nalgebra_sparse::csc::CscMatrix">CscMatrix</a>
+support multiplication with scalars, in addition to division by a scalar.
+Note that only <code>Matrix * Scalar</code> works in a generic context, although <code>Scalar * Matrix</code>
+has been implemented for many of the built-in arithmetic types. This is due to a fundamental
+restriction of the Rust type system. Therefore, in generic code you will need to always place
+the matrix on the left-hand side of the multiplication.</p>
+<h3 id="unary-operators"><a class="doc-anchor" href="#unary-operators">§</a>Unary operators</h3>
+<p>The following table lists currently supported unary operators.</p>
+<div><table><thead><tr><th>Format</th><th>AddAssign&lt;Matrix&gt;</th><th>MulAssign&lt;Matrix&gt;</th><th>MulAssign&lt;Scalar&gt;</th><th>Neg</th></tr></thead><tbody>
+<tr><td>COO</td><td></td><td></td><td></td><td></td></tr>
+<tr><td>CSR</td><td></td><td></td><td>x</td><td>x</td></tr>
+<tr><td>CSC</td><td></td><td></td><td>x</td><td>x</td></tr>
+</tbody></table>
+</div>
+<p>|</p>
+<h2 id="example-usage"><a class="doc-anchor" href="#example-usage">§</a>Example usage</h2>
+<p>For example, consider the case where you want to compute the expression
+<code>C &lt;- 3.0 * C + 2.0 * A^T * B</code>, where <code>A</code>, <code>B</code>, <code>C</code> are matrices and <code>A^T</code> is the transpose
+of <code>A</code>. The simplest way to write this is:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code>c = <span class="number">3.0 </span>* c + <span class="number">2.0 </span>* a.transpose() * b;</code></pre></div>
+<p>This is simple and straightforward to read, and therefore the recommended way to implement
+it. However, if you have determined that this is a performance bottleneck of your application,
+it may be possible to speed things up. First, let’s see what’s going on here. The <code>std</code>
+operations are evaluated eagerly. This means that the following steps take place:</p>
+<ol>
+<li>Evaluate <code>let c_temp = 3.0 * c</code>. This requires scaling all values of the matrix.</li>
+<li>Evaluate <code>let a_t = a.transpose()</code> into a new temporary matrix.</li>
+<li>Evaluate <code>let a_t_b = a_t * b</code> into a new temporary matrix.</li>
+<li>Evaluate <code>let a_t_b_scaled = 2.0 * a_t_b</code>. This requires scaling all values of the matrix.</li>
+<li>Evaluate <code>c = c_temp + a_t_b_scaled</code>.</li>
+</ol>
+<p>An alternative way to implement this expression (here using CSR matrices) is:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>nalgebra_sparse::ops::{Op, serial::spmm_csr_prealloc};
+
+<span class="comment">// Evaluate the expression `c &lt;- 3.0 * c + 2.0 * a^T * b
+</span>spmm_csr_prealloc(<span class="number">3.0</span>, <span class="kw-2">&amp;mut </span>c, <span class="number">2.0</span>, Op::Transpose(<span class="kw-2">&amp;</span>a), Op::NoOp(<span class="kw-2">&amp;</span>b))
+    .expect(<span class="string">"We assume that the pattern of C is able to accommodate the result."</span>);</code></pre></div>
+<p>Compared to the simpler example, this snippet is harder to read, but it calls a single
+computational kernel that avoids many of the intermediate steps listed out before. Therefore
+directly calling kernels may sometimes lead to better performance. However, this should
+always be verified by performance profiling!</p>
+</div></details><h2 id="modules" class="section-header">Modules<a href="#modules" class="anchor">§</a></h2><dl class="item-table"><dt><a class="mod" href="serial/index.html" title="mod nalgebra_sparse::ops::serial">serial</a></dt><dd>Serial sparse matrix arithmetic routines.</dd></dl><h2 id="enums" class="section-header">Enums<a href="#enums" class="anchor">§</a></h2><dl class="item-table"><dt><a class="enum" href="enum.Op.html" title="enum nalgebra_sparse::ops::Op">Op</a></dt><dd>Determines whether a matrix should be transposed in a given operation.</dd></dl></section></div></main></body></html>

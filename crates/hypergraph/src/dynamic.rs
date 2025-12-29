@@ -1,11 +1,12 @@
 use crate::signature::EdgeSignature;
+use bit_vec::BitVec;
 use core::ids::{EdgeIx, NodeIx};
 use manifold::store::ManifoldStore;
 
 pub struct HypergraphDyn {
     pub epoch: u64,
-    pub dirty_nodes: Vec<u8>,
-    pub dirty_edges: Vec<u8>,
+    pub dirty_nodes: BitVec,
+    pub dirty_edges: BitVec,
 
     // Edge payload (common to all arities)
     pub head: Vec<NodeIx>,
@@ -31,8 +32,8 @@ impl HypergraphDyn {
     pub fn new(epoch: u64) -> Self {
         Self {
             epoch,
-            dirty_nodes: Vec::new(),
-            dirty_edges: Vec::new(),
+            dirty_nodes: BitVec::new(),
+            dirty_edges: BitVec::new(),
             head: Vec::new(),
             edge_kind: Vec::new(),
             signatures: Vec::new(),
@@ -46,13 +47,24 @@ impl HypergraphDyn {
         }
     }
 
+        fn ensure_node_capacity(&mut self, node_ix: NodeIx) {
+        let node_ix = node_ix as usize;
+        if node_ix >= self.dirty_nodes.len() {
+            self.dirty_nodes.grow(node_ix + 1 - self.dirty_nodes.len(), false);
+        }
+    }
+
     pub fn add_edge(&mut self, tails: &[NodeIx], head: NodeIx) -> EdgeIx {
         let e = self.head.len() as EdgeIx;
         self.head.push(head);
-        self.dirty_edges.push(1);
-        self.dirty_nodes[head as usize] = 1;
+        self.dirty_edges.grow(e as usize + 1 - self.dirty_edges.len(), false);
+        self.dirty_edges.set(e as usize, true);
+
+        self.ensure_node_capacity(head);
+        self.dirty_nodes.set(head as usize, true);
         for &t in tails {
-            self.dirty_nodes[t as usize] = 1;
+            self.ensure_node_capacity(t);
+            self.dirty_nodes.set(t as usize, true);
         }
         // self.edge_kind.push(kind);
 
@@ -100,5 +112,10 @@ impl HypergraphDyn {
         let e = self.add_edge(tails, head);
         self.signatures.push(signature);
         Ok(e)
+    }
+
+    pub fn clear_dirty(&mut self) {
+        self.dirty_nodes.clear();
+        self.dirty_edges.clear();
     }
 }

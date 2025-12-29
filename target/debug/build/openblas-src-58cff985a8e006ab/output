@@ -1,0 +1,11 @@
+cargo:rerun-if-env-changed=OPENBLAS_TARGET
+cargo:rerun-if-env-changed=OPENBLAS_CC
+cargo:rerun-if-env-changed=OPENBLAS_HOSTCC
+cargo:rerun-if-env-changed=OPENBLAS_FC
+cargo:rerun-if-env-changed=OPENBLAS_RANLIB
+cargo:warning=OpenBLAS: Detecting fortran compiler failed. Only BLAS and f2c-converted LAPACK are compiled.
+cargo:rustc-link-search=/Volumes/2.5SSDDD128/MHscratch/target/debug/build/openblas-src-58cff985a8e006ab/out/OpenBLAS-0.3.30
+cargo:INCLUDE=/Volumes/2.5SSDDD128/MHscratch/target/debug/build/openblas-src-58cff985a8e006ab/out/OpenBLAS-0.3.30
+cargo:LIBRARY=/Volumes/2.5SSDDD128/MHscratch/target/debug/build/openblas-src-58cff985a8e006ab/out/OpenBLAS-0.3.30
+cargo:rustc-link-lib=System
+cargo:rustc-link-lib=static=openblas

@@ -11,12 +11,11 @@ pub struct Event {
 
 impl Ord for Event {
     fn cmp(&self, other: &Self) -> Ordering {
-        (self.time, self.priority, self.node, self.edge).cmp(&(
-            other.time,
-            other.priority,
-            other.node,
-            other.edge,
-        ))
+        // Note: this is a min-heap, so we reverse the comparison.
+        other.time.cmp(&self.time)
+            .then_with(|| other.priority.cmp(&self.priority))
+            .then_with(|| other.node.cmp(&self.node))
+            .then_with(|| other.edge.cmp(&self.edge))
     }
 }
 

@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["SparseEntry","SparseEntryMut","SparseFormatErrorKind"],"externcrate":["na"],"mod":["convert","coo","csc","csr","factorization","ops","pattern"],"struct":["SparseFormatError"]};

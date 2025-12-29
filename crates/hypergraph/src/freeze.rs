@@ -4,8 +4,9 @@ use crate::delta::FrozenDelta;
 use crate::dynamic::HypergraphDyn;
 use crate::frozen::HypergraphFrozen;
 use crate::FrozenBase;
-use core::ids::{EdgeIx, Epoch};
+use core::ids::{EdgeIx, Epoch, NodeIx};
 use std::mem;
+use std::collections::BTreeMap;
 
 #[derive(Clone, Debug)]
 pub struct FreezeReport {
@@ -248,13 +249,46 @@ fn prefix_sum_into(deg: &[u32], off: &mut [u32]) {
     }
 }
 
-pub fn freeze_incremental(
-    _g: &HypergraphDyn,
-    _base: &FrozenBase,
-) -> FrozenDelta {
-    // TODO: implement this
-    FrozenDelta {
-        added_edges: vec![],
-        removed_edges: vec![],
+use std::collections::BTreeSet;
+
+pub fn freeze_incremental(g: &HypergraphDyn, base: &FrozenBase) -> FrozenDelta {
+    let mut delta = FrozenDelta::default();
+
+    let base_edges: BTreeSet<EdgeIx> = (0..base.graph.n_edges).collect();
+    let current_edges: BTreeSet<EdgeIx> = (0..g.head.len() as u32).collect();
+
+    delta.added_edges = current_edges.difference(&base_edges).cloned().collect();
+    delta.removed_edges = base_edges.difference(&current_edges).cloned().collect();
+
+    for node_ix in g.dirty_nodes.iter().map(|i| i as NodeIx) {
+        let mut new_in_adj = g.head.iter().enumerate().filter(|(_, &h)| h == node_ix).map(|(i, _)| i as EdgeIx).collect::<Vec<_>>();
+        new_in_adj.sort();
+        delta.patched_in_adjacency.insert(node_ix, new_in_adj.into_boxed_slice());
+
+        let mut new_out_adj = Vec::new();
+        for (i, e) in g.edges_k2.iter().enumerate() {
+            if g.tails_k2[i * 2] == node_ix || g.tails_k2[i * 2 + 1] == node_ix {
+                new_out_adj.push(*e);
+            }
+        }
+        for (i, e) in g.edges_k3.iter().enumerate() {
+            if g.tails_k3[i * 3] == node_ix || g.tails_k3[i * 3 + 1] == node_ix || g.tails_k3[i * 3 + 2] == node_ix {
+                new_out_adj.push(*e);
+            }
+        }
+        for (i, e) in g.edges_var.iter().enumerate() {
+            let t0 = g.tail_off_var[i] as usize;
+            let t1 = g.tail_off_var[i + 1] as usize;
+            for &t in &g.tails_var[t0..t1] {
+                if t == node_ix {
+                    new_out_adj.push(*e);
+                    break;
+                }
+            }
+        }
+        new_out_adj.sort();
+        delta.patched_out_adjacency.insert(node_ix, new_out_adj.into_boxed_slice());
     }
+
+    delta
 }

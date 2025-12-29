@@ -4,10 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+core = { path = "../core" }
 manifold = { path = "../manifold" }
 traits = { path = "../traits" }
-core = { path = "../core" }
-
-[features]
-default = []
-type_alias_impl_trait = []
+bit-vec = "0.6.3"

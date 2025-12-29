@@ -7,6 +7,14 @@ pub mod delta;
 pub mod arity;
 pub mod signature;
 
+// The base frozen graph that deltas can be applied to.
+#[derive(Clone, Debug)]
+pub struct FrozenBase {
+    // For now, this is just a full frozen graph.
+    // In the future, this could be a more compact representation.
+    pub graph: HypergraphFrozen,
+}
+
 use std::ops::ControlFlow;
 
 pub use frozen::HypergraphFrozen as FrozenHypergraph;

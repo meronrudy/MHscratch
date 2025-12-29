@@ -121,13 +121,51 @@ mod tests {
 
         fn mul_into(&self, x: ArrayView1<f64>, y: &mut Array1<f64>) {
             let x_vec = DVector::from_row_slice(x.as_slice().unwrap());
-            let y_vec = &self.matrix * x_vec;
+            
+            // Create a new DVector to store the result
+            let mut y_vec = DVector::zeros(self.rows());
+            
+            // Get the raw data from the matrix
+            let (row_offsets, col_indices, values) = self.matrix.csr_data();
+            
+            // Perform the multiplication manually
+            for row_idx in 0..self.rows() {
+                let start = row_offsets[row_idx] as usize;
+                let end = row_offsets[row_idx + 1] as usize;
+                
+                let mut sum = 0.0;
+                for i in start..end {
+                    let col_idx = col_indices[i] as usize;
+                    let val = values[i];
+                    sum += val * x_vec[col_idx];
+                }
+                y_vec[row_idx] = sum;
+            }
+            
             y.assign(&Array1::from_vec(y_vec.as_slice().to_vec()));
         }
 
         fn mul_transpose_into(&self, x: ArrayView1<f64>, y: &mut Array1<f64>) {
             let x_vec = DVector::from_row_slice(x.as_slice().unwrap());
-            let y_vec = self.matrix.transpose() * x_vec;
+            
+            // Create a new DVector to store the result
+            let mut y_vec = DVector::zeros(self.cols());
+            
+            // Get the raw data from the matrix
+            let (row_offsets, col_indices, values) = self.matrix.csr_data();
+            
+            // Perform the transpose multiplication manually
+            for row_idx in 0..self.rows() {
+                let start = row_offsets[row_idx] as usize;
+                let end = row_offsets[row_idx + 1] as usize;
+                
+                for i in start..end {
+                    let col_idx = col_indices[i] as usize;
+                    let val = values[i];
+                    y_vec[col_idx] += val * x_vec[row_idx];
+                }
+            }
+            
             y.assign(&Array1::from_vec(y_vec.as_slice().to_vec()));
         }
     }
@@ -166,9 +204,30 @@ mod tests {
         coupled_op.mul_into(x.view(), &mut y);
 
         // 6. Compute the explicit `L_total` matrix and `y_expected = L_total_matrix * x`.
+        // Create a combined matrix
         let l_total_matrix = &l_hyper_matrix * alpha + &l_manifold_matrix * beta;
         let x_vec = DVector::from_row_slice(x.as_slice().unwrap());
-        let y_expected_vec = &l_total_matrix * x_vec;
+        
+        // Create a new DVector to store the result
+        let mut y_expected_vec = DVector::zeros(3);
+        
+        // Get the raw data from the matrix
+        let (row_offsets, col_indices, values) = l_total_matrix.csr_data();
+        
+        // Perform the multiplication manually
+        for row_idx in 0..l_total_matrix.nrows() {
+            let start = row_offsets[row_idx] as usize;
+            let end = row_offsets[row_idx + 1] as usize;
+            
+            let mut sum = 0.0;
+            for i in start..end {
+                let col_idx = col_indices[i] as usize;
+                let val = values[i];
+                sum += val * x_vec[col_idx];
+            }
+            y_expected_vec[row_idx] = sum;
+        }
+        
         let y_expected = Array1::from_vec(y_expected_vec.as_slice().to_vec());
 
         // 7. Assert that `y` and `y_expected` are close.
