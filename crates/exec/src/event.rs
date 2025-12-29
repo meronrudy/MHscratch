@@ -1,5 +1,4 @@
-use core::cmp::Ordering;
-use core::ids::{EdgeIx, NodeIx};
+use std::cmp::Ordering;
 
 pub use core::ids::{EdgeIx, NodeIx};
 
@@ -36,4 +35,3 @@ pub struct Event {
     pub key: EventKey,
     // Keep payload tiny; add more fields later if needed.
 }
-

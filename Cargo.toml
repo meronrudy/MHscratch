@@ -8,5 +8,5 @@ members = [
     "crates/exec",
     "crates/analysis",
     "crates/verify",
-    "tests", "crates/traits",
+    "tests",
 ]

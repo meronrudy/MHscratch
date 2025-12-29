@@ -1,46 +1,46 @@
-use core::ids::{NodeIx, EdgeIx};
-use manifold::store::ManifoldStore;
+use crate::delta::{Delta, DeltaBuf};
+use crate::views::{FrozenGraphView, GateView, ManifoldView};
+use core::ids::EdgeIx;
 
-/// Specifies whether to fire an edge in push or pull mode.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug)]
 pub enum FireMode {
-    /// Triggers edges from dirty tails.
     Push,
-    /// Triggers edges from a requested head.
     Pull,
 }
 
-/// A tangent vector.
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub struct Tangent {
-    pub dx: f32,
-    pub dy: f32,
-}
+pub fn eval_edge<G, M>(
+    e: EdgeIx,
+    graph: &G,
+    gate: &GateView<'_>,
+    mani: &M,
+    event_seq: u64,
+    out: &mut DeltaBuf<M::Tangent>,
+) where
+    G: FrozenGraphView,
+    M: ManifoldView,
+{
+    if gate.edge_active[e as usize] == 0 {
+        return;
+    }
 
-/// A change to the hypergraph.
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub enum Delta {
-    /// A point update to a node.
-    PointUpdate(NodeIx, Tangent),
-    // A constraint to be applied to a node.
-    Constraint(NodeIx, u32, f32),
-}
+    let head = graph.edge_head(e);
+    let _head_p = mani.point(head);
 
-// Operator: move head halfway toward midpoint of its two tails.
-pub fn eval_edge(
-    _edge: EdgeIx,
-    tails: &[NodeIx],
-    head: NodeIx,
-    m: &ManifoldStore,
-) -> Delta {
-    let a = tails[0];
-    let b = tails[1];
+    // Example: move head toward average tail point (toy, replace later)
+    let tails = graph.edge_tails(e);
+    if tails.is_empty() {
+        return;
+    }
 
-    let mid = m.midpoint(a, b);
-    let ph_x = m.point_x[head as usize];
-    let ph_y = m.point_y[head as usize];
+    // You define Tangent algebra; this stays placeholder.
+    // Use a separate trait if you want generic tangent ops.
+    let _dummy = M::Tangent::default();
 
-    let dx = 0.5 * (mid.x - ph_x);
-    let dy = 0.5 * (mid.y - ph_y);
-    Delta::PointUpdate(head, Tangent { dx, dy })
+    // Emit a delta (placeholder tangent)
+    out.push(Delta::PointUpdate {
+        node: head,
+        tangent: _dummy,
+        source_edge: e,
+        seq: event_seq,
+    });
 }

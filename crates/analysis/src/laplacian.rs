@@ -1,6 +1,6 @@
 
 use hypergraph::{
-    FrozenHypergraph,
+    frozen::HypergraphFrozen,
     FrozenHypergraphView,
 };
 use nalgebra_sparse::{CsrMatrix, CooMatrix};
@@ -21,7 +21,7 @@ impl LaplacianBuilder {
     /// - `D_e` is the diagonal matrix of edge degrees.
     ///
     /// The method returns a sparse CSR matrix representing the Laplacian.
-    pub fn build(hypergraph: &FrozenHypergraph) -> CsrMatrix<f64> {
+    pub fn build(hypergraph: &HypergraphFrozen) -> CsrMatrix<f64> {
         let num_nodes = hypergraph.n_nodes as usize;
         let num_edges = hypergraph.n_edges as usize;
 

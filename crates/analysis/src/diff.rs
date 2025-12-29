@@ -1,4 +1,4 @@
-use traits::LinearOperator;
+use crate::linear_operator::LinearOperator;
 use ndarray::{Array1, ArrayView1};
 
 /// A trait for differentiable linear operators.

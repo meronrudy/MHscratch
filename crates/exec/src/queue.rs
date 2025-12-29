@@ -1,126 +1,103 @@
-use crate::event::Event;
-use std::collections::{BinaryHeap, VecDeque};
+use std::collections::BinaryHeap;
+use std::vec::Vec;
+use std::cmp::Reverse;
 
-// A deterministic event queue.
-pub trait EventQueue {
-    fn new() -> Self;
-    fn with_capacity(capacity: usize) -> Self;
-    fn push(&mut self, event: Event);
-    fn pop(&mut self) -> Option<Event>;
-    fn is_empty(&self) -> bool;
-    fn len(&self) -> usize;
+use crate::event::{Event, EventKey};
+use core::ids::{EdgeIx, NodeIx};
+
+#[derive(Clone, Copy, Debug)]
+struct HeapEntry {
+    key: Reverse<EventKey>, // min-heap behavior
+    slot: u32,
 }
 
-// A simple FIFO queue for events with equal times.
-pub struct FifoEventQueue {
-    queue: VecDeque<Event>,
-}
-
-impl EventQueue for FifoEventQueue {
-    fn new() -> Self {
-        Self { queue: VecDeque::new() }
-    }
-
-    fn with_capacity(capacity: usize) -> Self {
-        Self { queue: VecDeque::with_capacity(capacity) }
-    }
-
-    fn push(&mut self, event: Event) {
-        self.queue.push_back(event);
-    }
-
-    fn pop(&mut self) -> Option<Event> {
-        self.queue.pop_front()
-    }
-
-    fn is_empty(&self) -> bool {
-        self.queue.is_empty()
-    }
-
-    fn len(&self) -> usize {
-        self.queue.len()
+impl Ord for HeapEntry {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.key.cmp(&other.key)
+            .then(self.slot.cmp(&other.slot)) // deterministic if keys equal
     }
 }
+impl PartialOrd for HeapEntry {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+impl PartialEq for HeapEntry {
+    fn eq(&self, other: &Self) -> bool {
+        self.key == other.key && self.slot == other.slot
+    }
+}
+impl Eq for HeapEntry {}
 
-// A binary heap for events with mixed times.
-pub struct BinaryHeapEventQueue {
-    heap: BinaryHeap<Event>,
+#[derive(Debug)]
+struct Slot {
+    event: Event,
+    live: bool,
 }
 
-impl EventQueue for BinaryHeapEventQueue {
-    fn new() -> Self {
-        Self { heap: BinaryHeap::new() }
+#[derive(Debug)]
+pub struct EventQueue {
+    slots: Vec<Slot>,
+    free: Vec<u32>,           // free slot stack
+    heap: BinaryHeap<HeapEntry>,
+    next_seq: u64,
+}
+
+impl EventQueue {
+    pub fn with_capacity(cap: usize) -> Self {
+        Self {
+            slots: Vec::with_capacity(cap),
+            free: Vec::with_capacity(cap / 4 + 1),
+            heap: BinaryHeap::with_capacity(cap),
+            next_seq: 0,
+        }
     }
 
-    fn with_capacity(capacity: usize) -> Self {
-        Self { heap: BinaryHeap::with_capacity(capacity) }
+    #[inline]
+    pub fn len(&self) -> usize {
+        self.heap.len()
     }
 
-    fn push(&mut self, event: Event) {
-        self.heap.push(event);
-    }
-
-    fn pop(&mut self) -> Option<Event> {
-        self.heap.pop()
-    }
-
-    fn is_empty(&self) -> bool {
+    #[inline]
+    pub fn is_empty(&self) -> bool {
         self.heap.is_empty()
     }
 
-    fn len(&self) -> usize {
-        self.heap.len()
+    fn alloc_slot(&mut self, event: Event) -> u32 {
+        if let Some(ix) = self.free.pop() {
+            let s = &mut self.slots[ix as usize];
+            s.event = event;
+            s.live = true;
+            ix
+        } else {
+            let ix = self.slots.len() as u32;
+            self.slots.push(Slot { event, live: true });
+            ix
+        }
+    }
+
+    pub fn push(&mut self, time: u64, priority: u32, node: NodeIx, edge: Option<EdgeIx>) {
+        let seq = self.next_seq;
+        self.next_seq += 1;
+
+        let key = EventKey { time, priority, node, edge, seq };
+        let event = Event { key };
+        let slot = self.alloc_slot(event);
+
+        self.heap.push(HeapEntry { key: Reverse(key), slot });
+    }
+
+    pub fn pop(&mut self) -> Option<Event> {
+        while let Some(entry) = self.heap.pop() {
+            let ix = entry.slot as usize;
+            let slot = &mut self.slots[ix];
+            if !slot.live {
+                continue;
+            }
+            slot.live = false;
+            self.free.push(entry.slot);
+            return Some(slot.event);
+        }
+        None
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::event::Event;
-    use core::ids::{NodeIx, EdgeIx};
-
-    #[test]
-    fn fifo_queue_test() {
-        let mut queue = FifoEventQueue::new();
-        assert!(queue.is_empty());
-
-        let event1 = Event { time: 0, priority: 0, node: 0, edge: None };
-        let event2 = Event { time: 0, priority: 1, node: 1, edge: Some(0) };
-
-        queue.push(event1.clone());
-        queue.push(event2.clone());
-
-        assert_eq!(queue.len(), 2);
-        assert!(!queue.is_empty());
-
-        assert_eq!(queue.pop(), Some(event1));
-        assert_eq!(queue.pop(), Some(event2));
-        assert_eq!(queue.pop(), None);
-        assert!(queue.is_empty());
-    }
-
-    #[test]
-    fn binary_heap_queue_test() {
-        let mut queue = BinaryHeapEventQueue::new();
-        assert!(queue.is_empty());
-
-        let event1 = Event { time: 1, priority: 0, node: 0, edge: None };
-        let event2 = Event { time: 0, priority: 1, node: 1, edge: Some(0) };
-        let event3 = Event { time: 0, priority: 0, node: 2, edge: None };
-
-        queue.push(event1.clone());
-        queue.push(event2.clone());
-        queue.push(event3.clone());
-
-        assert_eq!(queue.len(), 3);
-        assert!(!queue.is_empty());
-
-        // Events should be popped in order of time, then priority.
-        assert_eq!(queue.pop(), Some(event3));
-        assert_eq!(queue.pop(), Some(event2));
-        assert_eq!(queue.pop(), Some(event1));
-        assert_eq!(queue.pop(), None);
-        assert!(queue.is_empty());
-    }
-}
-

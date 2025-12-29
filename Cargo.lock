@@ -14,7 +14,6 @@ dependencies = [
  "ndarray 0.15.6",
  "ndarray-linalg",
  "rayon",
- "traits",
 ]
 
 [[package]]
@@ -77,8 +76,10 @@ checksum = "812e12b5285cc515a9c72a5c1d3b6d46a19dac5acfef5265968c166106e31dd3"
 name = "bridge"
 version = "0.1.0"
 dependencies = [
+ "core",
  "hypergraph",
- "traits",
+ "manifold",
+ "nalgebra 0.32.6",
 ]
 
 [[package]]
@@ -313,7 +314,6 @@ dependencies = [
  "bit-vec",
  "core",
  "manifold",
- "traits",
 ]
 
 [[package]]
@@ -903,14 +903,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn",
-]
-
-[[package]]
-name = "traits"
-version = "0.1.0"
-dependencies = [
- "core",
- "ndarray 0.15.6",
 ]
 
 [[package]]

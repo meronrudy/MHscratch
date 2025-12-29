@@ -1,7 +1,7 @@
 use crate::arity::ArityGroup;
 use crate::signature::EdgeSignature;
 use core::ids::{EdgeIx, NodeIx, Epoch};
-use traits::footprint::Footprint;
+use manifold::footprint::EdgeFootprint as Footprint;
 
 #[derive(Clone, Debug)]
 pub struct HypergraphFrozen {

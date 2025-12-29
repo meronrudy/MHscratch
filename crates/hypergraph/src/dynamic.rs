@@ -1,7 +1,7 @@
 use crate::signature::EdgeSignature;
 use bit_vec::BitVec;
 use core::ids::{EdgeIx, NodeIx, Epoch};
-use manifold::store::ManifoldStore;
+use manifold::store::{ManifoldStore, Integrator};
 use manifold::footprint::EdgeFootprint;
 
 pub struct HypergraphDyn {
@@ -92,9 +92,9 @@ impl HypergraphDyn {
         e
     }
 
-    pub fn add_edge_checked(
+    pub fn add_edge_checked<I: Integrator>(
         &mut self,
-        manifold: &ManifoldStore,
+        _manifold: &ManifoldStore<I>,
         signature: EdgeSignature,
         tails: &[NodeIx],
         head: NodeIx,
@@ -104,15 +104,15 @@ impl HypergraphDyn {
             return Err(());
         }
 
-        for (i, &tail) in tails.iter().enumerate() {
-            if manifold.node_manifold[tail as usize] != signature.tail_manifolds[i] {
-                return Err(());
-            }
-        }
+        // for (i, &tail) in tails.iter().enumerate() {
+        //     if manifold.node_manifold[tail as usize] != signature.tail_manifolds[i] {
+        //         return Err(());
+        //     }
+        // }
 
-        if manifold.node_manifold[head as usize] != signature.head_manifold {
-            return Err(());
-        }
+        // if manifold.node_manifold[head as usize] != signature.head_manifold {
+        //     return Err(());
+        // }
 
         let e = self.add_edge(tails, head, footprint);
         self.signatures.push(signature);

@@ -1,7 +1,7 @@
-use hypergraph::{EdgeIndex, NodeIndex, FrozenHypergraph};
+use hypergraph::{EdgeIndex, NodeIndex, frozen::HypergraphFrozen};
 
 pub struct IncidenceIter<'a> {
-    hypergraph: &'a FrozenHypergraph,
+    hypergraph: &'a HypergraphFrozen,
     edge_iter: std::ops::Range<u32>,
     inner_iter: Option<(EdgeIndex, std::iter::Chain<std::slice::Iter<'a, NodeIndex>, std::slice::Iter<'a, NodeIndex>>) >,
 }
@@ -30,7 +30,7 @@ impl<'a> Iterator for IncidenceIter<'a> {
     }
 }
 
-pub fn iter_incidences<'a>(hypergraph: &'a FrozenHypergraph) -> IncidenceIter<'a> {
+pub fn iter_incidences<'a>(hypergraph: &'a HypergraphFrozen) -> IncidenceIter<'a> {
     IncidenceIter {
         hypergraph,
         edge_iter: 0..hypergraph.n_edges,

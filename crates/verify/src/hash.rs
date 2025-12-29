@@ -1,18 +1,17 @@
-use manifold::store::ManifoldStore;
+use manifold::store::{ManifoldStore, Integrator};
 
 // A stable-ish hash for tests.
 // - If you later need true bit-level determinism, hash f32::to_bits().
 // - This is acceptable for the golden harness skeleton.
-pub fn state_hash(m: &ManifoldStore) -> u64 {
+pub fn state_hash<I: Integrator>(m: &ManifoldStore<I>) -> u64 {
     // FNV-1a 64-bit
     let mut h: u64 = 14695981039346656037;
     h = fnv_u64(h, m.epoch);
 
-    for x in &m.point_x {
-        h = fnv_u32(h, x.to_bits());
-    }
-    for y in &m.point_y {
-        h = fnv_u32(h, y.to_bits());
+    for p in &m.points {
+        h = fnv_u32(h, p.x.to_bits());
+        h = fnv_u32(h, p.y.to_bits());
+        h = fnv_u32(h, p.z.to_bits());
     }
     h
 }

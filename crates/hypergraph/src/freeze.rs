@@ -1,12 +1,10 @@
-use traits::footprint::Footprint;
+use manifold::footprint::{EdgeFootprint, EdgeFootprintV1};
 use crate::arity::ArityGroup;
 use crate::delta::FrozenDelta;
 use crate::dynamic::HypergraphDyn;
 use crate::frozen::HypergraphFrozen;
-use crate::FrozenBase;
 use core::ids::{EdgeIx, Epoch, NodeIx};
 use std::mem;
-use std::collections::BTreeMap;
 
 #[derive(Clone, Debug)]
 pub struct FreezeReport {
@@ -35,7 +33,7 @@ impl Default for FreezeCheckedOpts {
 
 pub fn freeze_checked(
     g: HypergraphDyn,
-    opts: FreezeCheckedOpts,
+    _opts: FreezeCheckedOpts,
 ) -> (HypergraphFrozen, FreezeReport) {
     let edges_in = g.head.len() as u32;
     let tails_in =
@@ -210,15 +208,15 @@ fn freeze_csr(mut g: HypergraphDyn, n_nodes: u32) -> HypergraphFrozen {
     }
 
     let footprints = vec![
-        Footprint {
+        EdgeFootprint::V1(EdgeFootprintV1 {
             influence_radius: 0.0,
             anchor: None,
-        };
+        });
         n_edges as usize
     ];
 
     HypergraphFrozen {
-        epoch: g.epoch as Epoch,
+        epoch: g.graph_epoch as Epoch,
         n_nodes,
         n_edges,
         edge_head: mem::take(&mut g.head),
@@ -251,10 +249,10 @@ fn prefix_sum_into(deg: &[u32], off: &mut [u32]) {
 
 use std::collections::BTreeSet;
 
-pub fn freeze_incremental(g: &HypergraphDyn, base: &FrozenBase) -> FrozenDelta {
+pub fn freeze_incremental(g: &HypergraphDyn, base: &HypergraphFrozen) -> FrozenDelta {
     let mut delta = FrozenDelta::default();
 
-    let base_edges: BTreeSet<EdgeIx> = (0..base.graph.n_edges).collect();
+    let base_edges: BTreeSet<EdgeIx> = (0..base.n_edges).collect();
     let current_edges: BTreeSet<EdgeIx> = (0..g.head.len() as u32).collect();
 
     delta.added_edges = current_edges.difference(&base_edges).cloned().collect();

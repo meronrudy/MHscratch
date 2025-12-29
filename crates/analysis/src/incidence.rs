@@ -1,7 +1,7 @@
 use std::ops::ControlFlow;
 
 use hypergraph::{
-    FrozenHypergraph,
+    frozen::HypergraphFrozen,
     EdgeIndex,
     NodeIndex,
     FrozenHypergraphView,
@@ -14,13 +14,13 @@ use crate::incidence_iter::{iter_incidences, IncidenceIter};
 /// This provides an iterator over the `(node, edge, sign)` tuples of the
 /// hypergraph, where `sign` is `1` for outputs and `-1` for inputs.
 pub struct IncidenceView<'a> {
-    hypergraph: &'a FrozenHypergraph,
+    hypergraph: &'a HypergraphFrozen,
 }
 
 impl<'a> FrozenHypergraphView<'a> for IncidenceView<'a> {
     type Iter = IncidenceIter<'a>;
 
-    fn new_view(hypergraph: &'a FrozenHypergraph) -> Self {
+    fn new_view(hypergraph: &'a HypergraphFrozen) -> Self {
         Self { hypergraph }
     }
 

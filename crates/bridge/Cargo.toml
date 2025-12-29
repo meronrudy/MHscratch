@@ -4,5 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-traits = { path = "../traits" }
+core = { path = "../core" }
+manifold = { path = "../manifold" }
 hypergraph = { path = "../hypergraph" }
+nalgebra = "0.32.3"

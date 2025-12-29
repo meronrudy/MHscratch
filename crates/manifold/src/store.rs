@@ -1,4 +1,4 @@
-use core::ids::{Epoch, NodeIx};
+use core::ids::Epoch;
 use nalgebra::{Point3, Vector3};
 
 pub type Point = Point3<f32>;
@@ -30,7 +30,7 @@ pub struct ManifoldStore<I: Integrator> {
 impl<I: Integrator> ManifoldStore<I> {
     pub fn new(integrator: I) -> Self {
         Self {
-            epoch: Epoch(0),
+            epoch: 0,
             t: 0.0,
             dt: 0.0,
             points: Vec::new(),
@@ -44,7 +44,7 @@ impl<I: Integrator> ManifoldStore<I> {
         if let Some(velocities) = &self.velocities {
             self.integrator.integrate(&mut self.points, velocities, dt);
             self.t += dt;
-            self.epoch.0 += 1;
+            self.epoch += 1;
         }
     }
 }

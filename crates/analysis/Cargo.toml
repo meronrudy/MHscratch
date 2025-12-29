@@ -10,7 +10,6 @@ autograd = { version = "0.1", optional = true }
 hypergraph = { path = "../hypergraph" }
 nalgebra = "0.32.3"
 nalgebra-sparse = "0.11.0"
-traits = { path = "../traits" }
 rayon = "1.5"
 
 [dev-dependencies]

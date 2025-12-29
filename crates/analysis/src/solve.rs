@@ -1,5 +1,5 @@
-use traits::LinearOperator;
-use ndarray::{Array1, ArrayView1};
+use crate::linear_operator::LinearOperator;
+use ndarray::{Array1};
 
 /// Solves the linear system `Ax = b` using the Conjugate Gradient method.
 ///

@@ -3,18 +3,21 @@ use crate::store::Point;
 
 use nalgebra::Point3;
 
+#[derive(Clone, Debug)]
 pub enum EdgeFootprint {
     V1(EdgeFootprintV1),
     V2_2(EdgeFootprintV2<2>),
     V2_3(EdgeFootprintV2<3>),
 }
 
+#[derive(Clone, Debug)]
 pub struct EdgeFootprintV1 {
     pub influence_radius: f32,
     pub anchor: Option<NodeIx>,
 }
 
 
+#[derive(Clone, Debug)]
 pub struct EdgeFootprintV2<const K: usize> {
     pub simplex_proxy: [NodeIx; K],
     pub cached_centroid: Point,
