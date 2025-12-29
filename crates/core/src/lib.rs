@@ -1,2 +1,9 @@
 pub mod ids;
-pub mod dense_id_map;
+
+pub type Epoch = u64;
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub struct EpochPair {
+    pub graph_epoch: Epoch,
+    pub manifold_epoch: Epoch,
+}

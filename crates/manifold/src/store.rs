@@ -1,68 +1,50 @@
-use crate::integrate::integrate;
-use core::ids::{ManifoldId, NodeIx};
+use core::ids::{Epoch, NodeIx};
+use nalgebra::{Point3, Vector3};
 
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub struct Point2 {
-    pub x: f32,
-    pub y: f32,
+pub type Point = Point3<f32>;
+pub type Vecf = Vector3<f32>;
+
+pub trait Integrator {
+    fn integrate(&self, points: &mut [Point], velocities: &[Vecf], dt: f32);
 }
 
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub struct Tangent2 {
-    pub dx: f32,
-    pub dy: f32,
+pub struct ExplicitEuler;
+
+impl Integrator for ExplicitEuler {
+    fn integrate(&self, points: &mut [Point], velocities: &[Vecf], dt: f32) {
+        for (point, velocity) in points.iter_mut().zip(velocities.iter()) {
+            *point += *velocity * dt;
+        }
+    }
 }
 
-#[derive(Clone, Debug)]
-pub struct ManifoldParams {
-    pub metric_a: f32,
-    pub metric_b: f32,
-    pub curvature: f32,
-}
-
-#[derive(Clone, Debug)]
-pub struct ManifoldStore {
-    pub epoch: u64,
+pub struct ManifoldStore<I: Integrator> {
+    pub epoch: Epoch,
     pub t: f32,
     pub dt: f32,
-    pub node_manifold: Vec<ManifoldId>,
-    pub point_x: Vec<f32>,
-    pub point_y: Vec<f32>,
-    pub velocity: Vec<Tangent2>,
-    pub manifold_params: Vec<ManifoldParams>,
+    pub points: Vec<Point>,
+    pub velocities: Option<Vec<Vecf>>,
+    integrator: I,
 }
 
-impl ManifoldStore {
-    pub fn dist_nodes(&self, a: NodeIx, b: NodeIx) -> f32 {
-        let pa_x = self.point_x[a as usize];
-        let pa_y = self.point_y[a as usize];
-        let pb_x = self.point_x[b as usize];
-        let pb_y = self.point_y[b as usize];
-        let dx = pa_x - pb_x;
-        let dy = pa_y - pb_y;
-        (dx * dx + dy * dy).sqrt()
-    }
-
-    pub fn midpoint(&self, a: NodeIx, b: NodeIx) -> Point2 {
-        let pa_x = self.point_x[a as usize];
-        let pa_y = self.point_y[a as usize];
-        let pb_x = self.point_x[b as usize];
-        let pb_y = self.point_y[b as usize];
-        Point2 {
-            x: 0.5 * (pa_x + pb_x),
-            y: 0.5 * (pa_y + pb_y),
+impl<I: Integrator> ManifoldStore<I> {
+    pub fn new(integrator: I) -> Self {
+        Self {
+            epoch: Epoch(0),
+            t: 0.0,
+            dt: 0.0,
+            points: Vec::new(),
+            velocities: None,
+            integrator,
         }
     }
 
-    pub fn apply_delta(&mut self, n: NodeIx, dx: f32, dy: f32) {
-        self.point_x[n as usize] += dx;
-        self.point_y[n as usize] += dy;
-        self.epoch = self.epoch.wrapping_add(1);
-    }
-
     pub fn integrate(&mut self, dt: f32) {
-        self.t += dt;
         self.dt = dt;
-        integrate(self);
+        if let Some(velocities) = &self.velocities {
+            self.integrator.integrate(&mut self.points, velocities, dt);
+            self.t += dt;
+            self.epoch.0 += 1;
+        }
     }
 }

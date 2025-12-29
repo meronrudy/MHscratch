@@ -1,10 +1,11 @@
 use crate::signature::EdgeSignature;
 use bit_vec::BitVec;
-use core::ids::{EdgeIx, NodeIx};
+use core::ids::{EdgeIx, NodeIx, Epoch};
 use manifold::store::ManifoldStore;
+use manifold::footprint::EdgeFootprint;
 
 pub struct HypergraphDyn {
-    pub epoch: u64,
+    pub graph_epoch: Epoch,
     pub dirty_nodes: BitVec,
     pub dirty_edges: BitVec,
 
@@ -12,6 +13,7 @@ pub struct HypergraphDyn {
     pub head: Vec<NodeIx>,
     pub edge_kind: Vec<u16>,
     pub signatures: Vec<EdgeSignature>,
+    pub footprints: Vec<EdgeFootprint>,
 
     // Arity-specific storage
     // For k=2, tails are stored as [t0, t1, t0, t1, ...]
@@ -29,14 +31,15 @@ pub struct HypergraphDyn {
 }
 
 impl HypergraphDyn {
-    pub fn new(epoch: u64) -> Self {
+    pub fn new(graph_epoch: Epoch) -> Self {
         Self {
-            epoch,
+            graph_epoch,
             dirty_nodes: BitVec::new(),
             dirty_edges: BitVec::new(),
             head: Vec::new(),
             edge_kind: Vec::new(),
             signatures: Vec::new(),
+            footprints: Vec::new(),
             tails_k2: Vec::new(),
             edges_k2: Vec::new(),
             tails_k3: Vec::new(),
@@ -54,9 +57,10 @@ impl HypergraphDyn {
         }
     }
 
-    pub fn add_edge(&mut self, tails: &[NodeIx], head: NodeIx) -> EdgeIx {
+    pub fn add_edge(&mut self, tails: &[NodeIx], head: NodeIx, footprint: EdgeFootprint) -> EdgeIx {
         let e = self.head.len() as EdgeIx;
         self.head.push(head);
+        self.footprints.push(footprint);
         self.dirty_edges.grow(e as usize + 1 - self.dirty_edges.len(), false);
         self.dirty_edges.set(e as usize, true);
 
@@ -84,7 +88,7 @@ impl HypergraphDyn {
             }
         }
 
-        self.epoch = self.epoch.wrapping_add(1);
+        self.graph_epoch = self.graph_epoch.wrapping_add(1);
         e
     }
 
@@ -94,6 +98,7 @@ impl HypergraphDyn {
         signature: EdgeSignature,
         tails: &[NodeIx],
         head: NodeIx,
+        footprint: EdgeFootprint,
     ) -> Result<EdgeIx, ()> {
         if signature.tail_manifolds.len() != tails.len() {
             return Err(());
@@ -109,7 +114,7 @@ impl HypergraphDyn {
             return Err(());
         }
 
-        let e = self.add_edge(tails, head);
+        let e = self.add_edge(tails, head, footprint);
         self.signatures.push(signature);
         Ok(e)
     }

@@ -3,3 +3,4 @@ pub mod metric;
 pub mod geodesic;
 pub mod integrate;
 pub mod spatial;
+pub mod footprint;

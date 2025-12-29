@@ -1,27 +1,39 @@
+use core::cmp::Ordering;
 use core::ids::{EdgeIx, NodeIx};
-use std::cmp::Ordering;
 
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub struct Event {
+pub use core::ids::{EdgeIx, NodeIx};
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct EventKey {
     pub time: u64,
     pub priority: u32,
     pub node: NodeIx,
     pub edge: Option<EdgeIx>,
+    pub seq: u64, // tie-breaker, FIFO when everything else equals
 }
 
-impl Ord for Event {
+impl Ord for EventKey {
     fn cmp(&self, other: &Self) -> Ordering {
-        // Note: this is a min-heap, so we reverse the comparison.
-        other.time.cmp(&self.time)
-            .then_with(|| other.priority.cmp(&self.priority))
-            .then_with(|| other.node.cmp(&self.node))
-            .then_with(|| other.edge.cmp(&self.edge))
+        // NOTE: BinaryHeap is max-heap; we use Reverse<EventKey> later.
+        // So this is the natural ascending order.
+        self.time
+            .cmp(&other.time)
+            .then(self.priority.cmp(&other.priority))
+            .then(self.node.cmp(&other.node))
+            .then(self.edge.cmp(&other.edge))
+            .then(self.seq.cmp(&other.seq))
     }
 }
 
-impl PartialOrd for Event {
+impl PartialOrd for EventKey {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.cmp(other))
     }
+}
+
+#[derive(Clone, Copy, Debug)]
+pub struct Event {
+    pub key: EventKey,
+    // Keep payload tiny; add more fields later if needed.
 }
 
