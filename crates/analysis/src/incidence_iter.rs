@@ -7,14 +7,14 @@ pub struct IncidenceIter<'a> {
 }
 
 impl<'a> Iterator for IncidenceIter<'a> {
-    type Item = (NodeIndex, EdgeIndex, i8);
+    type Item = (NodeIndex, EdgeIndex, f64);
 
     fn next(&mut self) -> Option<Self::Item> {
         loop {
             if let Some((edge_index, inner_iter)) = &mut self.inner_iter {
                 if let Some(node) = inner_iter.next() {
                     let sign = if self.hypergraph.edge_head[*edge_index as usize] == *node { 1 } else { -1 };
-                    return Some((*node, *edge_index, sign));
+                    return Some((*node, *edge_index, f64::from(sign)));
                 }
             }
 

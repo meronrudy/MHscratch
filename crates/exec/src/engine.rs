@@ -1,7 +1,8 @@
-use crate::delta::DeltaBuf;
+use crate::delta::{Delta, DeltaBuf};
 use crate::fire::eval_edge;
 use crate::queue::EventQueue;
 use crate::views::{FrozenGraphView, GateView, ManifoldView};
+use rayon::prelude::*;
 
 pub struct Engine {
     pub q: EventQueue,
@@ -20,13 +21,24 @@ impl Engine {
         deltas: &mut DeltaBuf<M::Tangent>,
     )
     where
-        G: FrozenGraphView,
-        M: ManifoldView,
+        G: FrozenGraphView + Sync,
+        M: ManifoldView + Sync,
+        M::Tangent: Send,
     {
+        let mut edges = Vec::new();
         while let Some(ev) = self.q.pop() {
-            if let Some(e) = ev.key.edge {
-                eval_edge(e, graph, gate, mani, ev.key.seq, deltas);
+            if let Some(e) = ev.edge {
+                edges.push(e);
             }
+        }
+
+        let computed_deltas: Vec<Delta<M::Tangent>> = edges
+            .into_par_iter()
+            .map(|e| eval_edge(e, graph, gate, mani))
+            .collect::<Vec<_>>();
+
+        for delta in computed_deltas {
+            deltas.push(delta);
         }
     }
 }

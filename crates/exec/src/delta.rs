@@ -2,8 +2,8 @@ use core::ids::{EdgeIx, NodeIx};
 
 #[derive(Clone, Copy, Debug)]
 pub enum Delta<Tangent> {
-    PointUpdate { node: NodeIx, tangent: Tangent, source_edge: EdgeIx, seq: u64 },
-    Constraint { node: NodeIx, constraint_id: u32, strength: f32, source_edge: EdgeIx, seq: u64 },
+    PointUpdate(NodeIx, Tangent),
+    Constraint(NodeIx, u32, f32),
 }
 
 #[derive(Debug)]

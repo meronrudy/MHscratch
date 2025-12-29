@@ -8,5 +8,6 @@ core = { path = "../core" }
 manifold = { path = "../manifold" }
 hypergraph = { path = "../hypergraph" }
 bridge = { path = "../bridge" }
+rayon = "1.5"
 
 [dev-dependencies]

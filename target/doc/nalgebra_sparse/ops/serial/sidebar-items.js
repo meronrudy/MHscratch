@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"enum":["OperationErrorKind"],"fn":["spadd_csc_prealloc","spadd_csr_prealloc","spadd_pattern","spmm_csc_dense","spmm_csc_pattern","spmm_csc_prealloc","spmm_csc_prealloc_unchecked","spmm_csr_dense","spmm_csr_pattern","spmm_csr_prealloc","spmm_csr_prealloc_unchecked","spsolve_csc_lower_triangular"],"struct":["OperationError"]};

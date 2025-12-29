@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"enum":["SparsityPatternFormatError"],"struct":["SparsityPattern","SparsityPatternIter"]};

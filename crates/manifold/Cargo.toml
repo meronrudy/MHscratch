@@ -3,8 +3,15 @@ name = "manifold"
 version = "0.1.0"
 edition = "2021"
 
+[features]
+perf = []
+
 [dependencies]
+
+[dev-dependencies]
+approx = "0.5"
 nalgebra = "0.32"
+nalgebra-sparse = "0.11"
 kdtree = "0.7"
 petgraph = "0.6"
 thiserror = "1.0"

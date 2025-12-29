@@ -19,10 +19,9 @@ where
         a.iter().zip(b.iter()).map(|(&x, &y)| x * y).sum()
     }
     
-    let mut r = b.clone();
     let mut temp = Array1::zeros(op.rows());
     op.mul_into(x.view(), &mut temp);
-    r = b - &temp;
+    let mut r = b - &temp;
 
     let mut p = r.clone();
     let mut rs_old = dot_product(&r, &r);

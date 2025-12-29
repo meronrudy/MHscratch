@@ -8,6 +8,7 @@ ndarray = "0.15"
 ndarray-linalg = "0.16"
 autograd = { version = "0.1", optional = true }
 hypergraph = { path = "../hypergraph" }
+manifold = { path = "../manifold" }
 nalgebra = "0.32.3"
 nalgebra-sparse = "0.11.0"
 rayon = "1.5"

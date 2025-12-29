@@ -13,14 +13,12 @@ pub fn eval_edge<G, M>(
     graph: &G,
     gate: &GateView<'_>,
     mani: &M,
-    event_seq: u64,
-    out: &mut DeltaBuf<M::Tangent>,
-) where
+) -> Delta<M::Tangent> where
     G: FrozenGraphView,
     M: ManifoldView,
 {
     if gate.edge_active[e as usize] == 0 {
-        return;
+        return Delta::PointUpdate(graph.edge_head(e), M::Tangent::default()); // placeholder
     }
 
     let head = graph.edge_head(e);
@@ -29,7 +27,7 @@ pub fn eval_edge<G, M>(
     // Example: move head toward average tail point (toy, replace later)
     let tails = graph.edge_tails(e);
     if tails.is_empty() {
-        return;
+        return Delta::PointUpdate(head, M::Tangent::default());
     }
 
     // You define Tangent algebra; this stays placeholder.
@@ -37,10 +35,5 @@ pub fn eval_edge<G, M>(
     let _dummy = M::Tangent::default();
 
     // Emit a delta (placeholder tangent)
-    out.push(Delta::PointUpdate {
-        node: head,
-        tangent: _dummy,
-        source_edge: e,
-        seq: event_seq,
-    });
+    Delta::PointUpdate(head, _dummy)
 }

@@ -1,6 +1,10 @@
 use crate::store::Point;
 use crate::spatial::SpatialIndex;
 use core::ids::NodeIx;
+
+#[cfg(feature = "perf")]
+use crate::simd::dist_simd;
+#[cfg(not(feature = "perf"))]
 use nalgebra::distance;
 
 // A simple brute-force spatial index for correctness testing.
@@ -23,7 +27,11 @@ impl SpatialIndex for BruteForceIndex {
     fn radius_query(&self, center: &Point, r: f32, out: &mut Vec<NodeIx>) {
         out.clear();
         for (i, p) in self.points.iter().enumerate() {
-            if distance(p, center) <= r {
+            #[cfg(feature = "perf")]
+            let dist = dist_simd(p, center);
+            #[cfg(not(feature = "perf"))]
+            let dist = distance(p, center);
+            if dist <= r {
                 out.push(i as NodeIx);
             }
         }

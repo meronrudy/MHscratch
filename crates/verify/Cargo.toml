@@ -3,6 +3,10 @@ name = "verify"
 version = "0.1.0"
 edition = "2021"
 
+[features]
+units-dimensions = []
+
 [dependencies]
+core = { path = "../core" }
 manifold = { path = "../manifold" }
 exec = { path = "../exec" }

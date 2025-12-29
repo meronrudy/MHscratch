@@ -3,18 +3,17 @@ use std::cmp::Ordering;
 pub use core::ids::{EdgeIx, NodeIx};
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub struct EventKey {
+pub struct Event {
     pub time: u64,
     pub priority: u32,
     pub node: NodeIx,
     pub edge: Option<EdgeIx>,
-    pub seq: u64, // tie-breaker, FIFO when everything else equals
+    pub seq: u64, // tie-breaker for total order
 }
 
-impl Ord for EventKey {
+impl Ord for Event {
     fn cmp(&self, other: &Self) -> Ordering {
-        // NOTE: BinaryHeap is max-heap; we use Reverse<EventKey> later.
-        // So this is the natural ascending order.
+        // Deterministic ordering using (time, priority, node, edge) as total order
         self.time
             .cmp(&other.time)
             .then(self.priority.cmp(&other.priority))
@@ -24,14 +23,8 @@ impl Ord for EventKey {
     }
 }
 
-impl PartialOrd for EventKey {
+impl PartialOrd for Event {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.cmp(other))
     }
-}
-
-#[derive(Clone, Copy, Debug)]
-pub struct Event {
-    pub key: EventKey,
-    // Keep payload tiny; add more fields later if needed.
 }

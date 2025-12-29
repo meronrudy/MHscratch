@@ -34,13 +34,13 @@ mod tests {
             q.push(t,p,n,e);
         }
 
-        // Pop all; ensure monotone by key
+        // Pop all; ensure monotone by event
         let mut last = None;
         while let Some(ev) = q.pop() {
             if let Some(prev) = last {
-                assert!(prev <= ev.key, "non-monotone order: {:?} then {:?}", prev, ev.key);
+                assert!(prev <= ev, "non-monotone order: {:?} then {:?}", prev, ev);
             }
-            last = Some(ev.key);
+            last = Some(ev);
         }
     }
 
@@ -55,7 +55,7 @@ mod tests {
 
         let mut seqs = Vec::new();
         while let Some(ev) = q.pop() {
-            seqs.push(ev.key.seq);
+            seqs.push(ev.seq);
         }
 
         // Must be strictly increasing

@@ -59,3 +59,120 @@ impl HypergraphFrozen {
         0..self.n_edges
     }
 }
+
+// Incidence View for Laplacian
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum IncRole {
+    Tail,
+    Head,
+}
+
+#[derive(Clone, Copy, Debug)]
+pub struct IncEntry {
+    pub node: NodeIx,
+    pub edge: EdgeIx,
+    pub role: IncRole,
+    pub weight: f32, // use f32 for weights
+}
+
+pub trait FrozenIncidence {
+    fn node_count(&self) -> usize;
+    fn edge_count(&self) -> usize;
+
+    // zero-copy
+    fn edge_tails(&self, e: EdgeIx) -> &[NodeIx];
+    fn edge_head(&self, e: EdgeIx) -> NodeIx;
+    fn node_incident_edges(&self, v: NodeIx) -> &[EdgeIx];
+
+    // edge weight (assume 1.0 for now)
+    fn edge_weight(&self, e: EdgeIx) -> f32;
+}
+
+impl FrozenIncidence for HypergraphFrozen {
+    fn node_count(&self) -> usize { self.n_nodes as usize }
+    fn edge_count(&self) -> usize { self.n_edges as usize }
+
+    fn edge_tails(&self, e: EdgeIx) -> &[NodeIx] { self.edge_tails(e) }
+    fn edge_head(&self, e: EdgeIx) -> NodeIx { self.edge_head[e as usize] }
+    fn node_incident_edges(&self, v: NodeIx) -> &[EdgeIx] {
+        let start = self.out_off[v as usize] as usize;
+        let end = self.out_off[v as usize + 1] as usize;
+        &self.out_edges[start..end]
+    }
+
+    fn edge_weight(&self, _e: EdgeIx) -> f32 { 1.0 } // TODO: add weights if needed
+}
+
+// Iterators
+
+pub struct EdgeIncIter<'a, G: FrozenIncidence> {
+    graph: &'a G,
+    edge: EdgeIx,
+    tails: std::slice::Iter<'a, NodeIx>,
+    yielded_head: bool,
+}
+
+impl<'a, G: FrozenIncidence> EdgeIncIter<'a, G> {
+    pub fn new(graph: &'a G, e: EdgeIx) -> Self {
+        let tails = graph.edge_tails(e).iter();
+        Self { graph, edge: e, tails, yielded_head: false }
+    }
+}
+
+impl<'a, G: FrozenIncidence> Iterator for EdgeIncIter<'a, G> {
+    type Item = IncEntry;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if let Some(&node) = self.tails.next() {
+            return Some(IncEntry {
+                node,
+                edge: self.edge,
+                role: IncRole::Tail,
+                weight: self.graph.edge_weight(self.edge),
+            });
+        }
+        if !self.yielded_head {
+            self.yielded_head = true;
+            return Some(IncEntry {
+                node: self.graph.edge_head(self.edge),
+                edge: self.edge,
+                role: IncRole::Head,
+                weight: self.graph.edge_weight(self.edge),
+            });
+        }
+        None
+    }
+}
+
+pub struct NodeIncIter<'a, G: FrozenIncidence> {
+    graph: &'a G,
+    node: NodeIx,
+    edges: std::slice::Iter<'a, EdgeIx>,
+}
+
+impl<'a, G: FrozenIncidence> NodeIncIter<'a, G> {
+    pub fn new(graph: &'a G, v: NodeIx) -> Self {
+        let edges = graph.node_incident_edges(v).iter();
+        Self { graph, node: v, edges }
+    }
+}
+
+impl<'a, G: FrozenIncidence> Iterator for NodeIncIter<'a, G> {
+    type Item = IncEntry;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let &edge = self.edges.next()?;
+        let role = if self.graph.edge_head(edge) == self.node {
+            IncRole::Head
+        } else {
+            IncRole::Tail
+        };
+        Some(IncEntry {
+            node: self.node,
+            edge,
+            role,
+            weight: self.graph.edge_weight(edge),
+        })
+    }
+}

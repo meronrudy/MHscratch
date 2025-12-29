@@ -57,33 +57,19 @@ where
     }
 
     fn mul_into(&self, x: ArrayView1<f64>, y: &mut Array1<f64>) {
-        // Create temporary arrays to store the results of the individual multiplications.
-        let mut y1 = Array1::zeros(self.rows());
-        let mut y2 = Array1::zeros(self.rows());
-
-        // Perform the multiplications in parallel.
-        rayon::join(
-            || self.l1.mul_into(x, &mut y1),
-            || self.l2.mul_into(x, &mut y2),
-        );
-
-        // Combine the results.
-        y.assign(&(&y1 * self.alpha + &y2 * self.beta));
+        let mut temp = Array1::zeros(self.rows());
+        self.l1.mul_into(x, &mut temp);
+        y.assign(&(&temp * self.alpha));
+        self.l2.mul_into(x, &mut temp);
+        y.zip_mut_with(&temp, |yi, &ti| *yi += self.beta * ti);
     }
 
     fn mul_transpose_into(&self, x: ArrayView1<f64>, y: &mut Array1<f64>) {
-        // Create temporary arrays to store the results of the individual multiplications.
-        let mut y1 = Array1::zeros(self.cols());
-        let mut y2 = Array1::zeros(self.cols());
-
-        // Perform the multiplications in parallel.
-        rayon::join(
-            || self.l1.mul_transpose_into(x, &mut y1),
-            || self.l2.mul_transpose_into(x, &mut y2),
-        );
-
-        // Combine the results.
-        y.assign(&(&y1 * self.alpha + &y2 * self.beta));
+        let mut temp = Array1::zeros(self.cols());
+        self.l1.mul_transpose_into(x, &mut temp);
+        y.assign(&(&temp * self.alpha));
+        self.l2.mul_transpose_into(x, &mut temp);
+        y.zip_mut_with(&temp, |yi, &ti| *yi += self.beta * ti);
     }
 }
 
@@ -177,8 +163,8 @@ mod tests {
         let n0 = 0 as NodeIndex;
         let n1 = 1 as NodeIndex;
         let n2 = 2 as NodeIndex;
-        hg.add_edge(&[n0], n1);
-        hg.add_edge(&[n1], n2);
+        hg.add_edge(&[n0], n1, manifold::footprint::EdgeFootprint::V1(manifold::footprint::EdgeFootprintV1 { influence_radius: 0.0, anchor: None }));
+        hg.add_edge(&[n1], n2, manifold::footprint::EdgeFootprint::V1(manifold::footprint::EdgeFootprintV1 { influence_radius: 0.0, anchor: None }));
         let (frozen_hg, _) = freeze_checked(hg, Default::default());
 
         // 2. Build the hypergraph Laplacian matrix.

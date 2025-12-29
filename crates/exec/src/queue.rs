@@ -2,19 +2,19 @@ use std::collections::BinaryHeap;
 use std::vec::Vec;
 use std::cmp::Reverse;
 
-use crate::event::{Event, EventKey};
+use crate::event::Event;
 use core::ids::{EdgeIx, NodeIx};
 
 #[derive(Clone, Copy, Debug)]
 struct HeapEntry {
-    key: Reverse<EventKey>, // min-heap behavior
+    event: Reverse<Event>, // min-heap behavior
     slot: u32,
 }
 
 impl Ord for HeapEntry {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        self.key.cmp(&other.key)
-            .then(self.slot.cmp(&other.slot)) // deterministic if keys equal
+        self.event.cmp(&other.event)
+            .then(self.slot.cmp(&other.slot)) // deterministic if events equal
     }
 }
 impl PartialOrd for HeapEntry {
@@ -24,7 +24,7 @@ impl PartialOrd for HeapEntry {
 }
 impl PartialEq for HeapEntry {
     fn eq(&self, other: &Self) -> bool {
-        self.key == other.key && self.slot == other.slot
+        self.event == other.event && self.slot == other.slot
     }
 }
 impl Eq for HeapEntry {}
@@ -80,11 +80,10 @@ impl EventQueue {
         let seq = self.next_seq;
         self.next_seq += 1;
 
-        let key = EventKey { time, priority, node, edge, seq };
-        let event = Event { key };
+        let event = Event { time, priority, node, edge, seq };
         let slot = self.alloc_slot(event);
 
-        self.heap.push(HeapEntry { key: Reverse(key), slot });
+        self.heap.push(HeapEntry { event: Reverse(event), slot });
     }
 
     pub fn pop(&mut self) -> Option<Event> {

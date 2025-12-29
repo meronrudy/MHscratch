@@ -37,10 +37,9 @@ impl LaplacianBuilder {
 
         let mut coo = CooMatrix::new(num_nodes, num_edges);
 
-        for (node, edge, sign) in incidence_view.iter_view() {
+        for (node, edge, weight) in incidence_view.iter_view() {
             let node_id = node as usize;
             let edge_id = edge as usize;
-            let weight = f64::from(sign);
 
             coo.push(node_id, edge_id, weight);
 
@@ -92,8 +91,8 @@ mod tests {
         let n1 = 1 as NodeIndex;
         let n2 = 2 as NodeIndex;
 
-        hg.add_edge(&[n0], n1);
-        hg.add_edge(&[n1], n2);
+        hg.add_edge(&[n0], n1, manifold::footprint::EdgeFootprint::V1(manifold::footprint::EdgeFootprintV1 { influence_radius: 0.0, anchor: None }));
+        hg.add_edge(&[n1], n2, manifold::footprint::EdgeFootprint::V1(manifold::footprint::EdgeFootprintV1 { influence_radius: 0.0, anchor: None }));
 
         let (frozen_hg, _) = freeze_checked(hg, Default::default());
         let laplacian_sparse = LaplacianBuilder::build(&frozen_hg);
@@ -112,5 +111,41 @@ mod tests {
         // The smallest eigenvalue should be close to zero.
         let min_eigenvalue = eigenvalues.iter().fold(f64::INFINITY, |a, &b| a.min(b));
         assert!(min_eigenvalue.abs() < 1e-9);
+    }
+
+    #[test]
+    fn test_laplacian_numerical_stability() {
+        // Test with a hypergraph that has varying degrees to check numerical stability.
+        let mut hg = DynamicHypergraph::new(0);
+        let n0 = 0 as NodeIndex;
+        let n1 = 1 as NodeIndex;
+        let n2 = 2 as NodeIndex;
+        let n3 = 3 as NodeIndex;
+
+        // Nodes with different degrees
+        hg.add_edge(&[n0], n1, manifold::footprint::EdgeFootprint::V1(manifold::footprint::EdgeFootprintV1 { influence_radius: 0.0, anchor: None })); // degree n0:1, n1:2
+        hg.add_edge(&[n0], n2, manifold::footprint::EdgeFootprint::V1(manifold::footprint::EdgeFootprintV1 { influence_radius: 0.0, anchor: None })); // degree n0:2, n2:1
+        hg.add_edge(&[n1, n2], n3, manifold::footprint::EdgeFootprint::V1(manifold::footprint::EdgeFootprintV1 { influence_radius: 0.0, anchor: None })); // degree n1:3, n2:2, n3:1
+
+        let (frozen_hg, _) = freeze_checked(hg, Default::default());
+        let laplacian_sparse = LaplacianBuilder::build(&frozen_hg);
+
+        // Check that the matrix is symmetric (within numerical precision)
+        let mut laplacian_dense = DMatrix::zeros(laplacian_sparse.nrows(), laplacian_sparse.ncols());
+        for (r, c, v) in laplacian_sparse.triplet_iter() {
+            laplacian_dense[(r, c)] = *v;
+        }
+
+        for i in 0..laplacian_dense.nrows() {
+            for j in 0..laplacian_dense.ncols() {
+                assert!((laplacian_dense[(i, j)] - laplacian_dense[(j, i)]).abs() < 1e-12);
+            }
+        }
+
+        // Check eigenvalues are non-negative
+        let eigenvalues = laplacian_dense.symmetric_eigen().eigenvalues;
+        for eigenvalue in eigenvalues.iter() {
+            assert!(*eigenvalue >= -1e-9);
+        }
     }
 }

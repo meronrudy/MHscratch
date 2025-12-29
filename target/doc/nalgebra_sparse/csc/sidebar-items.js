@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"struct":["CscCol","CscColIter","CscColIterMut","CscColMut","CscMatrix","CscTripletIter","CscTripletIterMut"]};

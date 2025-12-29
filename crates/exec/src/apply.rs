@@ -17,36 +17,22 @@ fn kind_of<T>(d: &Delta<T>) -> DeltaKind {
 
 fn node_of<T>(d: &Delta<T>) -> NodeIx {
     match d {
-        Delta::PointUpdate { node, .. } => *node,
-        Delta::Constraint { node, .. } => *node,
+        Delta::PointUpdate(node, _) => *node,
+        Delta::Constraint(node, _, _) => *node,
     }
 }
 
-fn source_edge_of<T>(d: &Delta<T>) -> EdgeIx {
-    match d {
-        Delta::PointUpdate { source_edge, .. } => *source_edge,
-        Delta::Constraint { source_edge, .. } => *source_edge,
-    }
-}
 
-fn seq_of<T>(d: &Delta<T>) -> u64 {
-    match d {
-        Delta::PointUpdate { seq, .. } => *seq,
-        Delta::Constraint { seq, .. } => *seq,
-    }
-}
 
 pub fn apply_deltas<M: ManifoldMut>(
     mani: &mut M,
     deltas: &mut [Delta<M::Tangent>],
 ) {
-    // Canonical order: (node, kind, source_edge, seq)
+    // Canonical order: (node, kind)
     deltas.sort_by(|a, b| {
         node_of(a)
             .cmp(&node_of(b))
             .then((kind_of(a) as u8).cmp(&(kind_of(b) as u8)))
-            .then(source_edge_of(a).cmp(&source_edge_of(b)))
-            .then(seq_of(a).cmp(&seq_of(b)))
     });
 
     let mut mutated = false;
@@ -54,11 +40,11 @@ pub fn apply_deltas<M: ManifoldMut>(
     // Reduce/apply in deterministic order.
     for d in deltas.iter() {
         match *d {
-            Delta::PointUpdate { node, tangent, .. } => {
+            Delta::PointUpdate(node, tangent) => {
                 mani.exp_map_in_place(node, tangent);
                 mutated = true;
             }
-            Delta::Constraint { node, constraint_id, strength, .. } => {
+            Delta::Constraint(node, constraint_id, strength) => {
                 mani.relax_constraint(node, constraint_id, strength);
                 mutated = true;
             }
