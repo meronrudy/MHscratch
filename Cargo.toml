@@ -9,6 +9,9 @@ members = [
     "crates/analysis",
     "crates/verify",
     "crates/mhg-testkit",
+    "crates/toy-core",
+    "crates/toy-cli",
+    "crates/toy-api",
     "tests",
 ]
 

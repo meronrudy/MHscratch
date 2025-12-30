@@ -1,87 +1,161 @@
-# Hypergraph Framework Development Roadmap
+# CGRB CLI + API Expansion Plan (Post-Toy)
 
-This document outlines a high-level implementation roadmap for the Rust-based hypergraph framework. The roadmap is divided into three phases, focusing on stabilizing the existing codebase, expanding its feature set, and improving its usability and ecosystem integration.
+## Overview
 
----
+This plan expands the current toy implementation into a scalable CGRB system with dual frontends (CLI and API) over a unified command model. The key principle is that every CLI command has a direct API equivalent, both dispatching to the same core handlers.
 
-## Phase 1: Consolidation and Refinement
+## Current State Analysis
 
-The primary goal of this phase is to solidify the existing foundation of the framework, improve its performance, and make it more robust and easier to use.
+The existing toy system provides a foundation with:
+- Unified `Command` enum and `execute()` function
+- Toy CLI with clap-based subcommands
+- Simple Axum-based API with single `/v1/command` endpoint
+- Basic commands: ListInstances, RunInstance, Replay
 
-### 1.1. API Review and Refinement
-- **Objective:** Ensure the public APIs across all crates are consistent, ergonomic, and well-documented.
-- **Key Actions:**
-    - Conduct a thorough review of the `traits` crate to establish clear and consistent abstractions.
-    - Refine the APIs of the `hypergraph`, `analysis`, and `manifold` crates for better usability.
-    - Add `#[must_use]` and other relevant attributes to improve compile-time checks.
+## Expanded Architecture
 
-### 1.2. Performance Profiling and Optimization
-- **Objective:** Identify and address performance bottlenecks in critical components.
-- **Key Actions:**
-    - Profile core functionalities, including hypergraph creation/manipulation, linear system solvers, and Laplacian computations.
-    - Optimize memory usage and computational efficiency.
-    - Introduce parallelization using `rayon` for computationally intensive tasks.
+### Core Command Model
 
-### 1.3. Comprehensive Documentation Strategy
-- **Objective:** Create a comprehensive documentation suite to facilitate onboarding and adoption.
-- **Key Actions:**
-    - Write detailed `rustdoc` comments for all public APIs.
-    - Create a `book` or `mdbook` with tutorials, usage examples, and conceptual explanations.
-    - Improve and expand the existing `ARCHITECTURE.md` and `RUST_BEST_PRACTICES.md`.
+Extend the `Command` enum to support full CGRB operations:
 
-### 1.4. CI/CD and Testing Infrastructure
-- **Objective:** Establish a robust continuous integration and delivery pipeline.
-- **Key Actions:**
-    - Set up GitHub Actions for automated testing, linting (`cargo clippy`), and formatting (`cargo fmt`).
-    - Integrate code coverage reporting (e.g., using `tarpaulin`).
-    - Add benchmarking to the CI pipeline to track performance regressions.
+```rust
+pub enum Command {
+    // Existing toy commands
+    ListInstances,
+    RunInstance(RunInstanceArgs),
+    Replay(ReplayArgs),
 
----
+    // New CGRB commands
+    Compile(CompileReq),
+    Run(RunReq),
+    Verify(VerifyReq),
+    Hash(HashReq),
+    Inspect(InspectReq),
+    Generate(GenerateReq),
+}
+```
 
-## Phase 2: Feature Expansion
+Each command has:
+- Request struct (e.g., `CompileReq`)
+- Response struct (e.g., `CompileRes`)
+- No side effects beyond declared outputs
 
-This phase focuses on adding new capabilities to the framework to broaden its applicability in scientific computing and data analysis.
+### CLI Surface
 
-### 2.1. Advanced Analysis Tools
-- **Objective:** Implement a richer set of hypergraph analysis algorithms.
-- **Key Actions:**
-    - Add support for hypergraph centrality measures (e.g., degree, eigenvector, betweenness).
-    - Implement community detection algorithms for hypergraphs.
-    - Add algorithms for motif and pattern detection.
+Expand CLI with new subcommands, maintaining consistent argument patterns:
 
-### 2.2. Expanded Simulation Capabilities
-- **Objective:** Enhance the simulation capabilities of the framework.
-- **Key Actions:**
-    - Implement support for dynamic hypergraphs (i.e., hypergraphs that change over time).
-    - Introduce discrete-time and continuous-time simulation engines (e.g., for random walks, diffusion processes).
+```bash
+# Compile
+cgrb compile --instance instance.yaml --out compiled.cgrb --canonical cbor
 
-### 2.3. Visualization
-- **Objective:** Provide tools for visualizing hypergraphs and simulation results.
-- **Key Actions:**
-    - Develop a `visualization` crate that can generate static visualizations of hypergraphs (e.g., using `plotters`).
-    - Explore options for interactive visualization, potentially through a bridge to web-based libraries via WebAssembly (WASM).
+# Run
+cgrb run --compiled compiled.cgrb --solver reference --level 2 --out run.json
 
----
+# Verify
+cgrb verify --output run.json --level 2 --strict
 
-## Phase 3: Ecosystem and Usability
+# Replay
+cgrb replay --compiled compiled.cgrb --run run.json --out replay.json
 
-This phase is focused on making the framework more accessible to a broader audience and integrating it with other tools and ecosystems.
+# Hash
+cgrb hash --compiled compiled.cgrb
 
-### 3.1. Python Bindings
-- **Objective:** Create Python bindings to make the framework accessible from the Python ecosystem.
-- **Key Actions:**
-    - Use `PyO3` to expose the core data structures and functionalities to Python.
-    - Publish the Python package to PyPI.
+# Inspect
+cgrb inspect instance.yaml
+cgrb inspect compiled.cgrb
+cgrb inspect run.json
 
-### 3.2. Serialization and Interoperability
-- **Objective:** Implement robust serialization and support for common data formats.
-- **Key Actions:**
-    - Implement `serde` support for all core data structures to allow for easy serialization/deserialization (e.g., to JSON, Bincode).
-    - Add importers/exporters for common graph and hypergraph data formats.
+# Generate
+cgrb generate --family geometry_gated --seed 42 --out instance.yaml
+```
 
-### 3.3. Community and Release Management
-- **Objective:** Foster a community around the framework and establish a release process.
-- **Key Actions:**
-    - Publish the crates to `crates.io`.
-    - Create a project website with documentation, tutorials, and examples.
-    - Establish a clear versioning and release strategy.
+### API Surface
+
+Shift from single command endpoint to command-specific endpoints:
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET    | /capabilities | Get supported features and versions |
+| POST   | /compile | Compile instance |
+| POST   | /run | Execute solver |
+| POST   | /verify | Verify run output |
+| POST   | /replay | Deterministic replay |
+| POST   | /hash | Compute canonical hash |
+| POST   | /inspect | Analyze artifact |
+| POST   | /generate | Generate benchmark |
+
+Example request:
+
+```http
+POST /run
+Content-Type: application/json
+
+{
+  "compiled_id": "abc123",
+  "solver": "reference",
+  "level": 2
+}
+```
+
+### Solver Integration
+
+Support multiple solver types:
+
+1. **In-process plugins**: Rust traits implementing `Solver` trait
+2. **External executables**: Stdio contract with CBOR/JSON I/O
+
+```rust
+pub trait Solver {
+    fn name(&self) -> &'static str;
+    fn supported_level(&self) -> u8;
+    fn run(&self, compiled: &CompiledInstance, cfg: RunConfig) -> Result<RunCapsule>;
+}
+```
+
+### Hardware Backend Abstraction
+
+```rust
+pub trait Backend {
+    fn enqueue_event(&mut self, e: Event) -> Result<()>;
+    fn step(&mut self) -> Result<StepResult>;
+    fn snapshot(&self) -> Result<Snapshot>;
+}
+```
+
+Implementations for software reference, simulators, and hardware.
+
+### Versioning and Compatibility
+
+- Kernel spec versioned separately (currently v0.1)
+- RunCapsule includes version metadata
+- Capability negotiation via `/capabilities` endpoint
+- Verifier rejects incompatible versions
+
+```json
+{
+  "kernel_version": "0.1",
+  "trace_versions": ["1"],
+  "supported_solvers": ["reference", "hw_emulator"],
+  "max_arity": 8
+}
+```
+
+## Implementation Roadmap
+
+1. Extend Command enum with new variants
+2. Define request/response structs for all commands
+3. Update CLI with new subcommands
+4. Refactor API to multiple endpoints
+5. Implement solver plugin system
+6. Add backend abstraction layer
+7. Integrate verification and replay
+8. Add comprehensive error handling
+9. Implement capability negotiation
+10. Create integration tests
+
+## Migration Path
+
+- Preserve existing toy commands during transition
+- Add new commands incrementally
+- Maintain backwards compatibility in API
+- Update documentation and examples

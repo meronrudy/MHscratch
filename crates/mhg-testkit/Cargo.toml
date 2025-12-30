@@ -8,3 +8,4 @@ core = { path = "../core" }
 hypergraph = { path = "../hypergraph" }
 manifold = { path = "../manifold" }
 exec = { path = "../exec" }
+serde = { version = "1.0", features = ["derive"] }

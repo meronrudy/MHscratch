@@ -3,6 +3,9 @@
 //! but are executed on the real 3D ManifoldStore
 //! with z = 0.0. No test-specific geometry paths exist.
 
+pub mod toy_instance;
+pub mod toy_hw;
+
 pub type NodeIx = u32;
 pub type EdgeIx = u32;
 
@@ -84,6 +87,25 @@ pub fn assert_set_eq(mut got: Vec<u32>, mut exp: Vec<u32>) {
     exp.sort_unstable();
     exp.dedup();
     assert_eq!(got, exp);
+}
+
+/// Hardware-oriented counters (from toy hardware backend)
+#[derive(Debug, Clone, serde::Serialize)]
+pub struct HwCounts {
+    pub cycles: u64,
+    pub node_mem_reads: u64,
+    pub node_mem_writes: u64,
+    pub edge_mem_reads: u64,
+    pub event_q_pushes: u64,
+    pub event_q_pops: u64,
+    pub event_q_overflows: u64,
+    pub credit_consumes: u64,
+    pub credit_releases: u64,
+    pub credit_denies: u64,
+    pub pending_topo_events: u64,
+    pub lane_utilization: [u64; 2], // Fixed size for now (LANES=2)
+    pub node_write_conflicts: u64,
+    pub edge_read_conflicts: u64,
 }
 
 pub fn run_one_step(case: &DemoCase) -> RunResult {

@@ -1,0 +1,11 @@
+[package]
+name = "toy-api"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+toy-core = { path = "../toy-core" }
+anyhow = "1.0"
+axum = "0.7"
+serde_json = "1.0"
+tokio = { version = "1.0", features = ["full"] }
