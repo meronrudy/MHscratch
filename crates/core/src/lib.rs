@@ -1,4 +1,5 @@
 pub mod ids;
+pub mod views;
 
 pub type Epoch = u64;
 

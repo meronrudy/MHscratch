@@ -175,6 +175,7 @@ dependencies = [
  "core",
  "hypergraph",
  "manifold",
+ "nalgebra 0.32.6",
  "rayon",
 ]
 
@@ -423,6 +424,16 @@ checksum = "a06de3016e9fae57a36fd14dba131fccf49f74b40b7fbdb472f96e361ec71a08"
 dependencies = [
  "autocfg",
  "rawpointer 0.2.1",
+]
+
+[[package]]
+name = "mhg-testkit"
+version = "0.1.0"
+dependencies = [
+ "core",
+ "exec",
+ "hypergraph",
+ "manifold",
 ]
 
 [[package]]
@@ -886,6 +897,7 @@ dependencies = [
  "exec",
  "hypergraph",
  "manifold",
+ "mhg-testkit",
  "verify",
 ]
 

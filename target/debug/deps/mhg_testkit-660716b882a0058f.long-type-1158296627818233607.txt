@@ -1,0 +1,2 @@
+nalgebra::geometry::point::OPoint<f32, nalgebra::base::dimension::Const<3>>
+nalgebra::geometry::point::OPoint<f32, nalgebra::base::dimension::Const<3>>: From<&Point2>

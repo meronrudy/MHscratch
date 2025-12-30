@@ -10,3 +10,4 @@ manifold = { path = "../crates/manifold" }
 bridge = { path = "../crates/bridge" }
 exec = { path = "../crates/exec" }
 verify = { path = "../crates/verify" }
+mhg-testkit = { path = "../crates/mhg-testkit" }

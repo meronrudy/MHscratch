@@ -1,17 +1,17 @@
 use crate::cache::GateCache;
 use core::ids::EdgeIx;
 use hypergraph::frozen::HypergraphFrozen;
-use manifold::store::ManifoldStore;
+use core::views::ManifoldView;
 
 #[derive(Clone, Default)]
 pub struct DistanceGate {
     pub eps: f32,
-    cache: GateCache,
+    pub cache: GateCache,
 }
 
 impl DistanceGate {
-    pub fn allow(&mut self, m: &ManifoldStore, g: &HypergraphFrozen, e: EdgeIx) -> bool {
-        if !self.cache.is_valid(m.epoch, g.epoch) {
+    pub fn allow<M: ManifoldView>(&mut self, m: &M, g: &HypergraphFrozen, e: EdgeIx) -> bool {
+        if !self.cache.is_valid(m.epoch(), g.epoch) {
             let mut edge_active = Vec::new();
             let mut edge_weight = Vec::new();
             for edge in g.edge_indices() {
@@ -21,7 +21,7 @@ impl DistanceGate {
                 edge_active.push((dist < self.eps) as u8);
                 edge_weight.push(dist);
             }
-            self.cache.update(edge_active, edge_weight, m.epoch, g.epoch);
+            self.cache.update(edge_active, edge_weight, m.epoch(), g.epoch);
         }
         self.cache.edge_active[e as usize] != 0
     }

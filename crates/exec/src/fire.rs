@@ -24,16 +24,14 @@ pub fn eval_edge<G, M>(
     let head = graph.edge_head(e);
     let _head_p = mani.point(head);
 
-    // Example: move head toward average tail point (toy, replace later)
+    // Simple demo: move head toward first tail by 0.1 in x direction
     let tails = graph.edge_tails(e);
     if tails.is_empty() {
         return Delta::PointUpdate(head, M::Tangent::default());
     }
 
-    // You define Tangent algebra; this stays placeholder.
-    // Use a separate trait if you want generic tangent ops.
-    let _dummy = M::Tangent::default();
+    // Create a simple tangent (move in x by 0.1)
+    let tangent = M::make_tangent(0.1, 0.0, 0.0);
 
-    // Emit a delta (placeholder tangent)
-    Delta::PointUpdate(head, _dummy)
+    Delta::PointUpdate(head, tangent)
 }

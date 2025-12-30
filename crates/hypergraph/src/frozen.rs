@@ -2,6 +2,7 @@ use crate::arity::ArityGroup;
 use crate::signature::EdgeSignature;
 use core::ids::{EdgeIx, NodeIx, Epoch};
 use manifold::footprint::EdgeFootprint as Footprint;
+use core::views::FrozenGraphView;
 
 #[derive(Clone, Debug)]
 pub struct HypergraphFrozen {
@@ -102,6 +103,27 @@ impl FrozenIncidence for HypergraphFrozen {
     }
 
     fn edge_weight(&self, _e: EdgeIx) -> f32 { 1.0 } // TODO: add weights if needed
+}
+
+impl FrozenGraphView for HypergraphFrozen {
+    fn edge_count(&self) -> usize { self.n_edges as usize }
+
+    fn edge_tails(&self, e: EdgeIx) -> &[NodeIx] { self.edge_tails(e) }
+    fn edge_head(&self, e: EdgeIx) -> NodeIx { self.edge_head[e as usize] }
+
+    fn incident_edges(&self, node: NodeIx, out: &mut Vec<EdgeIx>) {
+        out.clear();
+        let start = self.out_off[node as usize] as usize;
+        let end = self.out_off[node as usize + 1] as usize;
+        out.extend_from_slice(&self.out_edges[start..end]);
+    }
+
+    fn incoming_edges(&self, head: NodeIx, out: &mut Vec<EdgeIx>) {
+        out.clear();
+        let start = self.in_off[head as usize] as usize;
+        let end = self.in_off[head as usize + 1] as usize;
+        out.extend_from_slice(&self.in_edges[start..end]);
+    }
 }
 
 // Iterators

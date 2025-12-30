@@ -10,7 +10,7 @@ pub enum EdgeFootprint {
     V2_3(EdgeFootprintV2<3>),
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 pub struct EdgeFootprintV1 {
     pub influence_radius: f32,
     pub anchor: Option<NodeIx>,
@@ -37,7 +37,7 @@ impl<const K: usize> EdgeFootprintV2<K> {
 
         for &node_ix in simplex_proxy.iter() {
             let point = &points[node_ix as usize];
-            let dist_sq = nalgebra::distance_squared(point, &centroid);
+            let dist_sq = nalgebra::distance_squared(&point, &centroid);
             if dist_sq > max_dist_sq {
                 max_dist_sq = dist_sq;
             }

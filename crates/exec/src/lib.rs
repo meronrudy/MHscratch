@@ -10,3 +10,5 @@ pub mod push;
 pub mod pull;
 pub mod engine;
 pub mod manifold_ops;
+pub mod gate;
+pub mod cache;
