@@ -1,6 +1,6 @@
 //! RunSummary: what a solver run must tell the verifier
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use mhg_testkit::HwCounts;
 
 /// High-level summary of a solver run
@@ -15,7 +15,7 @@ pub struct RunSummary {
 }
 
 /// Metadata about what ran
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RunMeta {
     pub instance_id: String,      // "triangle_attractor_v0"
     pub solver_id: String,        // "mhg-toy-0.1.0"
@@ -29,7 +29,7 @@ pub struct RunMeta {
 }
 
 /// Determinism guarantees
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum DeterminismLevel {
     // Same code + same machine + same build → bitwise same trace & state
     LocalBitwise,
@@ -42,7 +42,7 @@ pub enum DeterminismLevel {
 }
 
 /// Determinism anchors
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RunHashes {
     /// Hash of canonicalized instance (ToyInstance → canonical bytes)
     pub compile_hash: Option<String>,
@@ -86,14 +86,14 @@ pub struct RunCounts {
 }
 
 /// Periodic state snapshots
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CheckpointDigest {
     pub tick: u32,
     pub state_hash: String,
 }
 
 /// Small slices of trace and geometry for inspection
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RunPreview {
     /// First K fired events (for debugging)
     pub fired_events_head: Vec<FiredEvent>,
@@ -106,7 +106,7 @@ pub struct RunPreview {
 }
 
 /// Individual firing event
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FiredEvent {
     pub tick: u32,
     pub edge: u32, // EdgeIx
@@ -114,7 +114,7 @@ pub struct FiredEvent {
 }
 
 /// Node position changes over time
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct NodeTrajectorySample {
     pub node: u32, // NodeIx
     pub initial: [f32; 3],
@@ -124,7 +124,7 @@ pub struct NodeTrajectorySample {
 }
 
 /// Built-in property checks
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PropertyResult {
     pub name: String,          // "monotone_distance", "head_converged", etc.
     pub passed: bool,

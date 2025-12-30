@@ -9,5 +9,11 @@ path = "src/main.rs"
 
 [dependencies]
 toy-core = { path = "../toy-core" }
+toy-api = { path = "../toy-api" }
 clap = { version = "4.0", features = ["derive"] }
 serde_json = "1.0"
+serde_yaml = "0.9"
+tokio = { version = "1.0", features = ["full"] }
+
+[dev-dependencies]
+tempfile = "3.0"

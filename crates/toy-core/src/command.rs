@@ -12,6 +12,24 @@ pub enum Command {
 
     /// Replay from a saved snapshot/event log
     Replay(ReplayArgs),
+
+    /// Save current state to snapshot
+    SaveSnapshot(SaveSnapshotArgs),
+
+    /// Load state from snapshot
+    LoadSnapshot(LoadSnapshotArgs),
+
+    /// Get system status
+    GetStatus,
+
+    /// Run benchmarks on instances
+    Benchmark(BenchmarkArgs),
+
+    /// Configure system settings
+    Configure(ConfigureArgs),
+
+    /// Compare multiple runs
+    CompareRuns(CompareRunsArgs),
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -35,6 +53,35 @@ pub struct RunInstanceArgs {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ReplayArgs {
     pub snapshot_path: String,  // or inline snapshot data
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SaveSnapshotArgs {
+    pub path: String,
+    pub instance: Option<String>, // optional specific instance
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LoadSnapshotArgs {
+    pub path: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct BenchmarkArgs {
+    pub runs: u32,
+    pub instances: Vec<String>,
+    pub backends: Vec<BackendKind>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ConfigureArgs {
+    pub key: String,
+    pub value: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CompareRunsArgs {
+    pub run_ids: Vec<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
